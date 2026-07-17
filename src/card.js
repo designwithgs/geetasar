@@ -200,8 +200,8 @@
 
   document.querySelectorAll('.lt').forEach(function (b) {
     b.addEventListener('click', function () {
-      document.querySelectorAll('.lt').forEach(function (x) { x.classList.remove('on'); });
-      b.classList.add('on');
+      document.querySelectorAll('.lt').forEach(function (x) { x.setAttribute('aria-pressed', 'false'); });
+      b.setAttribute('aria-pressed', 'true');
       state.lang = b.dataset.lang;
       draw();
     });

@@ -1,103 +1,370 @@
-/* GeetaSar — palette: Krishna-night indigo, ivory, haldi gold, sindoor.
-   Deliberately NOT the saffron-on-white of every other Gita site. */
-:root {
-  --nila: #131a33;        /* page night */
-  --nila-2: #1b2447;      /* raised surface */
-  --ivory: #efe9da;       /* primary text */
-  --muted: #8b93b0;       /* secondary text */
-  --gold: #c9a227;        /* rules, accents */
-  --gold-hi: #dcb84e;     /* hover gold */
-  --sindoor: #c4472f;     /* single warm accent */
-  --serif-en: 'Source Serif 4', Georgia, serif;
-  --deva: 'Tiro Devanagari Sanskrit', 'Noto Serif Devanagari', serif;
-  --ui: 'Mukta', system-ui, sans-serif;
-}
-* { box-sizing: border-box; }
-html { -webkit-text-size-adjust: 100%; }
-body {
-  margin: 0;
-  background: radial-gradient(1200px 700px at 50% -10%, #1d2650 0%, var(--nila) 60%);
-  color: var(--ivory);
-  font-family: var(--ui);
-  font-weight: 300;
-  line-height: 1.7;
-}
-a { color: var(--gold-hi); text-decoration: none; }
-a:hover { text-decoration: underline; }
-:focus-visible { outline: 2px solid var(--gold-hi); outline-offset: 3px; border-radius: 2px; }
+/* ============================================================
+   गीतासार — night-sky theme v2 · "temple at evening aarti"
+   Palette: indigo night / ivory / haldi gold / sindoor
+   Animations: transform + opacity only. Honors reduced motion.
+   ============================================================ */
 
-/* header */
-.top { display: flex; justify-content: space-between; align-items: baseline; padding: 20px clamp(16px, 4vw, 48px); }
-.brand { font-family: var(--deva); font-size: 28px; color: var(--ivory); letter-spacing: 0.5px; }
-.brand span { color: var(--gold-hi); }
-.top nav a { margin-left: 22px; color: var(--muted); font-size: 15px; }
-.top nav a:hover { color: var(--ivory); text-decoration: none; }
-
-/* layout */
-.wrap { max-width: 720px; margin: 0 auto; padding: 8px 16px 64px; }
-.eyebrow { text-align: center; color: var(--gold); font-size: 14px; letter-spacing: 0.18em; text-transform: uppercase; margin: 18px 0 20px; }
-
-/* the signature: live card */
-.card-stage { display: flex; justify-content: center; }
-#cardCanvas {
-  width: min(92vw, 460px);
-  height: auto;
-  border-radius: 6px;
-  box-shadow: 0 0 0 1px rgba(201,162,39,.35), 0 24px 70px -20px rgba(0,0,0,.8), 0 0 90px -30px rgba(201,162,39,.35);
+:root{
+  --night:#141a33;
+  --night-deep:#0d1226;
+  --night-raise:#1a2144;
+  --ivory:#efe9da;
+  --ivory-dim:rgba(239,233,218,.66);
+  --ivory-faint:rgba(239,233,218,.38);
+  --gold:#c9a227;
+  --gold-bright:#e0bc45;
+  --gold-line:rgba(201,162,39,.28);
+  --gold-hair:rgba(201,162,39,.16);
+  --hairline:rgba(239,233,218,.10);
+  --hairline-strong:rgba(239,233,218,.22);
+  --gold-soft:rgba(201,162,39,.10);
+  --sindoor:#c4472f;
+  --sindoor-deep:#ad3a24;
+  --sa-font:"Tiro Devanagari Sanskrit",serif;
+  --hi-font:"Mukta",system-ui,sans-serif;
+  --en-font:"Source Serif 4",Georgia,serif;
+  --ease-out:cubic-bezier(.16,1,.3,1);
 }
 
-/* actions */
-.actions { display: flex; flex-direction: column; align-items: center; gap: 14px; margin: 26px 0 8px; }
-.lang-toggle { display: inline-flex; border: 1px solid rgba(201,162,39,.4); border-radius: 999px; overflow: hidden; }
-.lt { background: none; border: 0; color: var(--muted); font-family: var(--ui); font-size: 15px; padding: 7px 18px; cursor: pointer; }
-.lt.on { background: rgba(201,162,39,.15); color: var(--ivory); }
-.btns { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; }
-.btn {
-  font-family: var(--ui); font-size: 16px; font-weight: 400; cursor: pointer;
-  padding: 12px 22px; border-radius: 6px; border: 1px solid rgba(239,233,218,.25);
-  background: transparent; color: var(--ivory);
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{
+  margin:0;
+  color:var(--ivory);
+  font-family:var(--hi-font);
+  font-size:16px;
+  line-height:1.7;
+  background-color:var(--night);
+  background-image:radial-gradient(140% 90% at 50% -10%, var(--night-raise) 0%, var(--night) 48%, var(--night-deep) 100%);
+  background-attachment:fixed;
+  min-height:100vh;
 }
-.btn:hover { border-color: var(--ivory); }
-.btn.primary { background: var(--sindoor); border-color: var(--sindoor); color: #fff; }
-.btn.primary:hover { filter: brightness(1.1); }
-.btn.ghost { border-style: dashed; color: var(--muted); }
+::selection{background:rgba(201,162,39,.30);color:var(--ivory)}
+a{color:var(--ivory);text-decoration-color:var(--gold-line);text-underline-offset:3px}
+a:hover{color:var(--gold-bright);text-decoration-color:var(--gold)}
+:focus{outline:none}
+:focus-visible{outline:2px solid var(--gold);outline-offset:3px;border-radius:4px}
 
-/* verse text */
-.verse-text { margin-top: 44px; border-top: 1px solid rgba(201,162,39,.25); padding-top: 34px; }
-.sa { font-family: var(--deva); font-weight: 400; font-size: clamp(24px, 5vw, 32px); line-height: 1.9; text-align: center; margin: 0 0 18px; }
-.tr-toggle { text-align: center; color: var(--muted); margin-bottom: 26px; }
-.tr-toggle summary { cursor: pointer; font-size: 14px; letter-spacing: .06em; }
-.tr { font-style: italic; font-family: var(--serif-en); line-height: 2; }
-.mh { font-family: var(--deva); color: var(--gold); font-weight: 400; font-size: 18px; margin: 26px 0 6px; }
-.meaning .hi { font-size: 18px; }
-.meaning .en { font-family: var(--serif-en); font-size: 17px; color: #d8d2c2; }
-
-/* pager */
-.pager { display: flex; justify-content: space-between; margin-top: 44px; font-size: 16px; }
-.pager .mid { color: var(--muted); }
-
-/* pitch on home */
-.pitch { margin-top: 40px; text-align: center; color: var(--muted); font-size: 16px; }
-
-/* chapters */
-.page-h { font-family: var(--deva); font-weight: 400; text-align: center; font-size: clamp(26px, 5vw, 34px); margin: 4px 0 30px; }
-.chapter { border-bottom: 1px solid rgba(201,162,39,.2); padding: 14px 0; }
-.chapter summary { cursor: pointer; display: flex; gap: 14px; align-items: baseline; flex-wrap: wrap; }
-.ch-n { color: var(--gold); font-family: var(--deva); }
-.ch-name { font-family: var(--deva); font-size: 19px; }
-.ch-en { color: var(--muted); font-size: 14px; }
-.verse-grid { display: flex; flex-wrap: wrap; gap: 8px; padding: 16px 0 6px; }
-.verse-grid a {
-  font-family: var(--deva); min-width: 44px; text-align: center; padding: 6px 8px;
-  border: 1px solid rgba(139,147,176,.35); border-radius: 5px; color: var(--ivory);
+/* ---------- deep space: two star layers drift at different speeds (parallax),
+   each star breathes brighter/dimmer. Stars are box-shadows on 2 dots —
+   cheap to composite, transform/opacity only. ---------- */
+.sky{position:fixed;inset:-120px 0 0;overflow:hidden;pointer-events:none;z-index:0}
+.sky i{position:absolute;left:0;top:0;width:2px;height:2px;border-radius:50%;background:transparent}
+.sky i:nth-child(1){ /* far field: small ivory-white stars */
+  box-shadow:
+    6vw 12vh 0 0 rgba(239,233,218,.7), 17vw 68vh 0 0 rgba(239,233,218,.5),
+    24vw 32vh 0 0 rgba(214,222,255,.6), 33vw 85vh 0 0 rgba(239,233,218,.45),
+    41vw 18vh 0 0 rgba(214,222,255,.55), 52vw 55vh 0 0 rgba(239,233,218,.6),
+    59vw 9vh 0 0 rgba(239,233,218,.4), 68vw 74vh 0 0 rgba(214,222,255,.5),
+    76vw 28vh 0 0 rgba(239,233,218,.55), 87vw 62vh 0 0 rgba(239,233,218,.45),
+    94vw 15vh 0 0 rgba(214,222,255,.6), 46vw 96vh 0 0 rgba(239,233,218,.4),
+    12vw 44vh 0 0 rgba(239,233,218,.35), 81vw 91vh 0 0 rgba(239,233,218,.5),
+    63vw 40vh 0 0 rgba(214,222,255,.4), 29vw 6vh 0 0 rgba(239,233,218,.45);
+  animation:star-float 90s linear infinite, star-breathe 9s ease-in-out infinite;
 }
-.verse-grid a:hover { border-color: var(--gold-hi); text-decoration: none; }
-
-/* prose + footer */
-.prose p { font-size: 17px; }
-.foot { text-align: center; color: var(--muted); font-size: 13px; padding: 30px 16px 40px; border-top: 1px solid rgba(201,162,39,.15); }
-.foot .fine { font-size: 12px; opacity: .8; }
-
-@media (prefers-reduced-motion: no-preference) {
-  #cardCanvas { transition: box-shadow .4s ease; }
+.sky i:nth-child(2){ /* near field: fewer, larger, warmer stars with halo */
+  width:3px;height:3px;
+  box-shadow:
+    10vw 26vh 4px 1px rgba(224,188,69,.5), 36vw 70vh 5px 1px rgba(239,233,218,.55),
+    55vw 20vh 4px 1px rgba(224,188,69,.45), 72vw 48vh 5px 1px rgba(214,222,255,.5),
+    88vw 82vh 4px 1px rgba(224,188,69,.5), 20vw 90vh 5px 1px rgba(239,233,218,.45),
+    64vw 94vh 4px 1px rgba(224,188,69,.4), 44vw 38vh 5px 1px rgba(239,233,218,.5);
+  animation:star-float 55s linear infinite, star-breathe 6.5s ease-in-out -3s infinite;
 }
+.sky i:nth-child(3){ /* twinkle layer: offset phase so stars glow up while others dim */
+  box-shadow:
+    15vw 16vh 3px 0 rgba(239,233,218,.6), 49vw 78vh 3px 0 rgba(224,188,69,.5),
+    79vw 12vh 3px 0 rgba(214,222,255,.55), 27vw 52vh 3px 0 rgba(239,233,218,.5),
+    91vw 40vh 3px 0 rgba(224,188,69,.45), 5vw 80vh 3px 0 rgba(239,233,218,.45),
+    60vw 60vh 3px 0 rgba(214,222,255,.5);
+  animation:star-float 72s linear infinite, star-breathe 8s ease-in-out -5.5s infinite;
+}
+@keyframes star-float{
+  from{transform:translate3d(0,0,0)}
+  to{transform:translate3d(-40px,120px,0)}
+}
+@keyframes star-breathe{0%,100%{opacity:.25}50%{opacity:1}}
+
+/* everything sits above the sky */
+.top,.wrap,.foot{position:relative;z-index:1}
+
+/* ---------- header ---------- */
+.top{
+  display:flex;align-items:center;justify-content:space-between;gap:16px;
+  padding:18px clamp(16px,4vw,40px);
+  border-bottom:1px solid var(--hairline);
+  animation:fade-in 1s var(--ease-out) both;
+}
+.brand{
+  display:inline-flex;align-items:center;gap:12px;
+  font-family:var(--en-font);font-size:16px;font-weight:600;
+  letter-spacing:.24em;text-transform:uppercase;text-indent:.02em;
+  color:var(--ivory);text-decoration:none;
+}
+.brand:hover{color:var(--gold-bright)}
+/* logomark: the site's diamond ornament, set as a star — hairline outer
+   diamond, solid gold core. Rotates a quarter-turn on hover. */
+.brand .mark{
+  position:relative;width:15px;height:15px;flex:0 0 auto;
+  transform:rotate(45deg);
+  border:1px solid var(--gold);
+  transition:transform .5s var(--ease-out);
+}
+.brand .mark::before{
+  content:"";position:absolute;left:50%;top:50%;width:5px;height:5px;
+  transform:translate(-50%,-50%);
+  background:var(--gold-bright);
+  box-shadow:0 0 8px 1px rgba(224,188,69,.55);
+}
+.brand:hover .mark{transform:rotate(135deg)}
+.top nav{display:flex;gap:6px}
+.top nav a{
+  font-size:15px;color:var(--ivory-dim);text-decoration:none;
+  padding:8px 12px;border-radius:8px;
+  transition:color .18s,background-color .18s;
+}
+.top nav a:hover{color:var(--ivory);background:var(--gold-soft)}
+
+/* ---------- page shell ---------- */
+.wrap{
+  max-width:680px;margin:0 auto;
+  padding:clamp(24px,6vw,48px) 16px 56px;
+}
+
+/* ---------- darshan entrance sequence (homepage load) ----------
+   1. eyebrow fades       .1s
+   2. gold glow blooms    .2s → 1.8s
+   3. card rises into it  .5s
+   4. actions             1.15s
+   5. rest of page        via .reveal on scroll                      */
+.eyebrow{
+  text-align:center;margin:0 0 22px;
+  font-family:var(--en-font);font-size:12px;font-weight:600;
+  letter-spacing:.3em;text-transform:uppercase;color:var(--gold);
+  animation:rise 1s var(--ease-out) .1s both;
+}
+.card-stage{
+  position:relative;max-width:480px;margin:0 auto;
+  border-radius:14px;
+  box-shadow:
+    0 1px 2px rgba(5,8,22,.55),
+    0 12px 32px -8px rgba(5,8,22,.7),
+    0 36px 90px -18px rgba(5,8,22,.9),
+    0 0 0 1px rgba(201,162,39,.22);
+  animation:darshan 1.5s var(--ease-out) .5s both;
+}
+.card-stage::before{ /* the glow behind the card */
+  content:"";position:absolute;inset:-14% -18%;z-index:-1;
+  background:radial-gradient(50% 50% at 50% 50%, rgba(201,162,39,.30), rgba(201,162,39,.07) 52%, transparent 74%);
+  animation:bloom 2.6s var(--ease-out) .2s both;
+}
+.card-stage::after{ /* hairline inner frame over the container edge */
+  content:"";position:absolute;inset:0;border-radius:14px;
+  box-shadow:inset 0 0 0 1px rgba(239,233,218,.05);
+  pointer-events:none;
+}
+.card-stage canvas{display:block;width:100%;height:auto;border-radius:14px}
+@keyframes bloom{from{opacity:0;transform:scale(.6)}to{opacity:1;transform:scale(1)}}
+@keyframes darshan{from{opacity:0;transform:translateY(14px) scale(.975)}to{opacity:1;transform:none}}
+@keyframes rise{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:none}}
+@keyframes fade-in{from{opacity:0}to{opacity:1}}
+
+/* ---------- actions row ---------- */
+.actions{
+  display:flex;flex-wrap:wrap;align-items:center;justify-content:center;gap:12px;
+  margin:26px auto 0;
+  animation:rise 1s var(--ease-out) 1.25s both;
+}
+.btn{
+  font-family:var(--hi-font);font-size:16px;font-weight:500;color:var(--ivory);
+  background:transparent;border:1px solid var(--hairline-strong);border-radius:10px;
+  padding:11px 20px;min-height:44px;cursor:pointer;text-decoration:none;letter-spacing:.01em;
+  display:inline-flex;align-items:center;gap:8px;
+  transition:transform .18s var(--ease-out),border-color .18s,background-color .18s,color .18s;
+}
+.btn:hover{border-color:rgba(239,233,218,.4);background:rgba(239,233,218,.05);transform:translateY(-1px)}
+.btn:active{transform:translateY(0) scale(.98)}
+.btn-primary,.btn.primary{
+  background:var(--sindoor);border-color:var(--sindoor);color:#fdf6ea;
+  box-shadow:0 6px 18px -6px rgba(196,71,47,.55);
+}
+.btn-primary:hover,.btn.primary:hover{background:#cf5236;border-color:#cf5236}
+.btn-primary:active,.btn.primary:active{background:var(--sindoor-deep)}
+
+/* ---------- language toggle ---------- */
+.lang-toggle{
+  display:inline-flex;padding:3px;border:1px solid var(--hairline);
+  border-radius:999px;background:rgba(13,18,38,.5);
+}
+.lang-toggle button{
+  font-family:var(--hi-font);font-size:15px;font-weight:500;
+  color:var(--ivory-dim);background:transparent;border:0;border-radius:999px;
+  padding:8px 18px;min-height:38px;cursor:pointer;
+  transition:color .18s,background-color .18s,transform .18s var(--ease-out);
+}
+.lang-toggle button:hover{color:var(--ivory)}
+.lang-toggle button:active{transform:scale(.96)}
+.lang-toggle button.active,.lang-toggle button[aria-pressed="true"]{
+  color:var(--gold-bright);background:var(--gold-soft);
+  box-shadow:inset 0 0 0 1px var(--gold-line);
+}
+
+/* ---------- signature ornament: gold rule + diamond ---------- */
+.ornament{
+  position:relative;height:9px;max-width:340px;margin:44px auto;
+}
+.ornament::before{
+  content:"";position:absolute;left:0;right:0;top:4px;height:1px;
+  background:linear-gradient(90deg,
+    transparent, var(--gold-line) 18%, var(--gold-line) calc(50% - 20px), transparent calc(50% - 20px),
+    transparent calc(50% + 20px), var(--gold-line) calc(50% + 20px), var(--gold-line) 82%, transparent);
+}
+.ornament::after{
+  content:"";position:absolute;left:50%;top:50%;width:6px;height:6px;
+  transform:translate(-50%,-50%) rotate(45deg);
+  border:1px solid var(--gold);
+}
+
+/* ---------- verse text ---------- */
+.verse-text{max-width:600px;margin:0 auto;text-align:center}
+.sa{
+  font-family:var(--sa-font);font-weight:400;font-size:clamp(21px,5.6vw,28px);
+  line-height:1.9;color:var(--ivory);margin:0 0 18px;
+  text-wrap:balance;
+}
+.meaning{
+  font-size:17px;line-height:1.85;color:var(--ivory-dim);
+  margin:0 0 14px;text-wrap:pretty;
+}
+.meaning:lang(en){font-family:var(--en-font)}
+.verse-text .ref, .verse-text cite{
+  display:block;font-family:var(--en-font);font-style:normal;font-size:13px;
+  letter-spacing:.24em;text-transform:uppercase;color:var(--gold);margin-top:22px;
+}
+
+/* ---------- pager ---------- */
+.pager{
+  display:flex;justify-content:space-between;gap:16px;
+  max-width:600px;margin:36px auto 0;
+}
+.pager a{
+  font-size:15px;color:var(--ivory-dim);text-decoration:none;
+  padding:10px 14px;min-height:44px;display:inline-flex;align-items:center;
+  border:1px solid transparent;border-radius:10px;
+  transition:color .18s,border-color .18s,transform .18s var(--ease-out);
+}
+.pager a:hover{color:var(--gold-bright);border-color:var(--hairline);transform:translateY(-1px)}
+.pager a:active{transform:none}
+
+/* ---------- chapter accordions ---------- */
+.chapter{border-bottom:1px solid var(--hairline)}
+.chapter:first-of-type{border-top:1px solid var(--hairline)}
+.chapter summary{
+  list-style:none;cursor:pointer;
+  display:flex;align-items:center;gap:14px;
+  padding:16px 4px;min-height:44px;
+  font-size:17px;font-weight:500;color:var(--ivory);
+  transition:color .18s,background-color .18s;
+}
+.chapter summary::-webkit-details-marker{display:none}
+.chapter summary::before{
+  content:"";flex:0 0 auto;width:6px;height:6px;
+  border:1px solid var(--gold);transform:rotate(45deg);
+  transition:transform .3s var(--ease-out),background-color .3s;
+}
+.chapter summary:hover{color:var(--gold-bright);background:var(--gold-soft)}
+.chapter[open] summary{color:var(--gold-bright)}
+.chapter[open] summary::before{transform:rotate(225deg);background:var(--gold)}
+.chapter summary .count,.chapter summary small{
+  margin-left:auto;font-size:13px;font-weight:400;color:var(--ivory-faint);letter-spacing:.04em;
+}
+
+/* ---------- verse number grid ---------- */
+.verse-grid{
+  display:grid;grid-template-columns:repeat(auto-fill,minmax(50px,1fr));
+  gap:8px;padding:6px 2px 22px;
+}
+.verse-grid a{
+  display:flex;align-items:center;justify-content:center;
+  min-height:44px;border:1px solid var(--hairline);border-radius:9px;
+  font-family:var(--en-font);font-size:15px;color:var(--ivory-dim);text-decoration:none;
+  transition:color .16s,border-color .16s,background-color .16s,transform .16s var(--ease-out);
+}
+.verse-grid a:hover{color:var(--gold-bright);border-color:var(--gold);background:var(--gold-soft);transform:translateY(-2px)}
+.verse-grid a:active{transform:none}
+.verse-grid a[aria-current],.verse-grid a.current{
+  color:var(--night-deep);background:var(--gold);border-color:var(--gold);font-weight:600;
+}
+
+/* ---------- footer ---------- */
+.foot{
+  max-width:680px;margin:0 auto;padding:12px 16px 44px;
+  text-align:center;font-size:14px;line-height:1.8;color:var(--ivory-faint);
+}
+.foot a{color:var(--ivory-dim)}
+
+/* ---------- scroll reveal (JS adds html.js + .in) ---------- */
+html.js .reveal{opacity:0;transform:translateY(18px);transition:opacity .8s var(--ease-out),transform .8s var(--ease-out)}
+html.js .reveal.in{opacity:1;transform:none}
+
+/* ---------- reduced motion ---------- */
+@media (prefers-reduced-motion: reduce){
+  *,*::before,*::after{animation:none!important;transition:none!important}
+  .sky{display:none}
+  html.js .reveal{opacity:1;transform:none}
+}
+
+/* ============================================================
+   GeetaSar site components — adapted to theme v2.
+   (Everything above is the drop-in design CSS; below covers the
+   markup the theme preview didn't include.)
+   ============================================================ */
+
+/* actions: button cluster + ghost permalink */
+.btns{display:flex;flex-wrap:wrap;justify-content:center;gap:12px}
+.btn.ghost{border-style:dashed;color:var(--ivory-dim)}
+.btn.ghost:hover{color:var(--ivory)}
+
+/* transliteration toggle inside verse text */
+.tr-toggle{margin:0 0 26px;color:var(--ivory-dim)}
+.tr-toggle summary{
+  list-style:none;display:inline-block;cursor:pointer;
+  font-family:var(--en-font);font-size:12px;font-weight:600;
+  letter-spacing:.24em;text-transform:uppercase;color:var(--gold);
+  padding:6px 10px;border-radius:6px;
+  transition:color .18s,background-color .18s;
+}
+.tr-toggle summary::-webkit-details-marker{display:none}
+.tr-toggle summary:hover{color:var(--gold-bright);background:var(--gold-soft)}
+.tr{font-family:var(--en-font);font-style:italic;font-size:16px;line-height:2;color:var(--ivory-dim);margin:14px 0 0}
+
+/* meaning block: अर्थ / Meaning headers + hi/en paragraphs */
+.mh{font-family:var(--sa-font);font-weight:400;font-size:18px;color:var(--gold);margin:26px 0 8px}
+.meaning p{margin:0;text-wrap:pretty}
+.meaning p:lang(en){font-family:var(--en-font)}
+
+/* home pitch */
+.pitch{max-width:560px;margin:0 auto;text-align:center;font-size:16px;color:var(--ivory-dim)}
+
+/* page heading + prose (chapters index, about, 404) */
+.page-h{
+  font-family:var(--sa-font);font-weight:400;text-align:center;
+  font-size:clamp(26px,5vw,34px);line-height:1.6;color:var(--ivory);
+  margin:4px 0 30px;text-wrap:balance;
+}
+.prose p{font-size:17px;line-height:1.85;color:var(--ivory-dim)}
+
+/* pager middle link */
+.pager .mid{color:var(--ivory-faint)}
+
+/* chapter summary parts (अध्याय n · devanagari name · english name) */
+.chapter summary{flex-wrap:wrap}
+.ch-n{font-family:var(--sa-font);font-weight:400;color:var(--gold);flex:0 0 auto}
+.ch-name{font-family:var(--sa-font);font-weight:400;font-size:18px}
+.ch-en{margin-left:auto;font-size:13px;font-weight:400;color:var(--ivory-faint);letter-spacing:.04em}
+
+/* verse grid links hold Devanagari numerals */
+.verse-grid a{font-family:var(--sa-font);font-size:16px}
+
+/* footer fine print */
+.foot .fine{font-size:12.5px}

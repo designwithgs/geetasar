@@ -31,11 +31,11 @@ function shell({ title, desc, url, body, inlineData }) {
 <meta property="og:type" content="website">
 <meta property="og:image" content="${SITE}/og.png">
 <meta name="twitter:card" content="summary_large_image">
-<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="icon" href="/logo.svg" type="image/svg+xml">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Tiro+Devanagari+Sanskrit&family=Mukta:wght@300;400;500&family=Source+Serif+4:opsz,wght@8..60,400;8..60,600&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="/style.css">
+<link href="https://fonts.googleapis.com/css2?family=Tiro+Devanagari+Sanskrit&family=Mukta:wght@300;400;500;600&family=Source+Serif+4:opsz,wght@8..60,400;8..60,600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/style.css?v=2">
 <!-- Analytics: uncomment ONE of the two blocks below after setup.
 <script defer src="https://cloud.umami.is/script.js" data-website-id="YOUR-UMAMI-ID"></script>
 -->
@@ -46,8 +46,9 @@ function shell({ title, desc, url, body, inlineData }) {
 ${inlineData ? `<script>window.__VERSE__=${inlineData};</script>` : ''}
 </head>
 <body>
+<div class="sky" aria-hidden="true"><i></i><i></i><i></i></div>
 <header class="top">
-  <a class="brand" href="/">गीता<span>सार</span></a>
+  <a class="brand" href="/"><span class="mark" aria-hidden="true"></span>GeetaSar</a>
   <nav>
     <a href="/gita/">सभी श्लोक</a>
     <a href="/about/">About</a>
@@ -58,6 +59,7 @@ ${body}
   <p>गीतासार — one shloka a day, free forever. No ads, no login, no watermark.</p>
   <p class="fine">Sanskrit text is eternal &amp; public domain. Hindi: Swami Ramsukhdas · English: Shri Purohit Swami · Data: <a href="https://github.com/gita/gita">gita/gita</a> (Unlicense).</p>
 </footer>
+<script src="/reveal.js" defer></script>
 </body>
 </html>`;
 }
@@ -76,8 +78,8 @@ function verseBlock(v, { isToday }) {
 
   <section class="actions" aria-label="Share">
     <div class="lang-toggle" role="group" aria-label="Card language">
-      <button class="lt on" data-lang="hi">हिन्दी</button>
-      <button class="lt" data-lang="en">English</button>
+      <button class="lt" data-lang="hi" aria-pressed="true">हिन्दी</button>
+      <button class="lt" data-lang="en" aria-pressed="false">English</button>
     </div>
     <div class="btns">
       <button id="shareBtn" class="btn primary">Share on WhatsApp</button>
@@ -85,7 +87,9 @@ function verseBlock(v, { isToday }) {
     </div>
   </section>
 
-  <article class="verse-text">
+  <div class="ornament"></div>
+
+  <article class="verse-text reveal">
     <h1 class="sa" lang="sa">${saHtml}</h1>
     <details class="tr-toggle">
       <summary>Transliteration</summary>
@@ -102,8 +106,10 @@ function verseBlock(v, { isToday }) {
   <nav class="pager">
     ${prevNext(v)}
   </nav>
+
+  <div class="ornament"></div>
 </main>
-<script src="/card.js?v=2" defer></script>`;
+<script src="/card.js?v=3" defer></script>`;
 }
 
 function prevNext(v) {
@@ -131,8 +137,8 @@ const indexBody = `
   <section class="card-stage"><canvas id="cardCanvas" width="1080" height="1080" aria-label="Shareable verse card preview"></canvas></section>
   <section class="actions" aria-label="Share">
     <div class="lang-toggle" role="group" aria-label="Card language">
-      <button class="lt on" data-lang="hi">हिन्दी</button>
-      <button class="lt" data-lang="en">English</button>
+      <button class="lt" data-lang="hi" aria-pressed="true">हिन्दी</button>
+      <button class="lt" data-lang="en" aria-pressed="false">English</button>
     </div>
     <div class="btns">
       <button id="shareBtn" class="btn primary">Share on WhatsApp</button>
@@ -140,7 +146,8 @@ const indexBody = `
       <a id="permalink" class="btn ghost" href="/gita/">Open this verse →</a>
     </div>
   </section>
-  <article class="verse-text" id="verseText" hidden>
+  <div class="ornament"></div>
+  <article class="verse-text reveal" id="verseText" hidden>
     <h1 class="sa" lang="sa"></h1>
     <details class="tr-toggle"><summary>Transliteration</summary><p class="tr"></p></details>
     <div class="meaning">
@@ -148,12 +155,13 @@ const indexBody = `
       <h2 class="mh">Meaning</h2><p lang="en" class="en"></p>
     </div>
   </article>
-  <section class="pitch">
+  <div class="ornament"></div>
+  <section class="pitch reveal">
     <p>One verse from the Bhagavad Gita, every day. Sanskrit, Hindi, English — and a clean card you can send on WhatsApp. ${verses.length} shlokas, a new one each morning (IST).</p>
   </section>
 </main>
 <script>window.__TODAY__={count:${verses.length}};</script>
-<script src="/card.js?v=2" defer></script>`;
+<script src="/card.js?v=3" defer></script>`;
 
 fs.writeFileSync(
   path.join(DIST, 'index.html'),
@@ -190,6 +198,8 @@ const chBody = `
 <main class="wrap">
   <p class="eyebrow">श्रीमद्भगवद्गीता</p>
   <h1 class="page-h">सभी ${dev(18)} अध्याय · ${verses.length} श्लोक</h1>
+  <div class="ornament"></div>
+  <section class="reveal">
   ${Object.keys(byCh)
     .map((c) => {
       const name = chapters[c] || { hi: '', en: '' };
@@ -199,6 +209,7 @@ const chBody = `
 </details>`;
     })
     .join('\n')}
+  </section>
 </main>`;
 fs.mkdirSync(path.join(DIST, 'gita'), { recursive: true });
 fs.writeFileSync(
@@ -226,7 +237,7 @@ fs.writeFileSync(path.join(DIST, 'sitemap.xml'), `<?xml version="1.0" encoding="
 fs.writeFileSync(path.join(DIST, 'robots.txt'), `User-agent: *\nAllow: /\nSitemap: ${SITE}/sitemap.xml`);
 
 /* static assets */
-for (const f of ['style.css', 'card.js']) fs.copyFileSync(path.join(__dirname, 'src', f), path.join(DIST, f));
+for (const f of ['style.css', 'card.js', 'reveal.js']) fs.copyFileSync(path.join(__dirname, 'src', f), path.join(DIST, f));
 for (const f of fs.readdirSync(path.join(__dirname, 'static'))) fs.copyFileSync(path.join(__dirname, 'static', f), path.join(DIST, f));
 
 console.log(`Built ${urls.length} pages → dist/`);
