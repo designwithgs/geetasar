@@ -1,0 +1,103 @@
+/* GeetaSar — palette: Krishna-night indigo, ivory, haldi gold, sindoor.
+   Deliberately NOT the saffron-on-white of every other Gita site. */
+:root {
+  --nila: #131a33;        /* page night */
+  --nila-2: #1b2447;      /* raised surface */
+  --ivory: #efe9da;       /* primary text */
+  --muted: #8b93b0;       /* secondary text */
+  --gold: #c9a227;        /* rules, accents */
+  --gold-hi: #dcb84e;     /* hover gold */
+  --sindoor: #c4472f;     /* single warm accent */
+  --serif-en: 'Source Serif 4', Georgia, serif;
+  --deva: 'Tiro Devanagari Sanskrit', 'Noto Serif Devanagari', serif;
+  --ui: 'Mukta', system-ui, sans-serif;
+}
+* { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; }
+body {
+  margin: 0;
+  background: radial-gradient(1200px 700px at 50% -10%, #1d2650 0%, var(--nila) 60%);
+  color: var(--ivory);
+  font-family: var(--ui);
+  font-weight: 300;
+  line-height: 1.7;
+}
+a { color: var(--gold-hi); text-decoration: none; }
+a:hover { text-decoration: underline; }
+:focus-visible { outline: 2px solid var(--gold-hi); outline-offset: 3px; border-radius: 2px; }
+
+/* header */
+.top { display: flex; justify-content: space-between; align-items: baseline; padding: 20px clamp(16px, 4vw, 48px); }
+.brand { font-family: var(--deva); font-size: 28px; color: var(--ivory); letter-spacing: 0.5px; }
+.brand span { color: var(--gold-hi); }
+.top nav a { margin-left: 22px; color: var(--muted); font-size: 15px; }
+.top nav a:hover { color: var(--ivory); text-decoration: none; }
+
+/* layout */
+.wrap { max-width: 720px; margin: 0 auto; padding: 8px 16px 64px; }
+.eyebrow { text-align: center; color: var(--gold); font-size: 14px; letter-spacing: 0.18em; text-transform: uppercase; margin: 18px 0 20px; }
+
+/* the signature: live card */
+.card-stage { display: flex; justify-content: center; }
+#cardCanvas {
+  width: min(92vw, 460px);
+  height: auto;
+  border-radius: 6px;
+  box-shadow: 0 0 0 1px rgba(201,162,39,.35), 0 24px 70px -20px rgba(0,0,0,.8), 0 0 90px -30px rgba(201,162,39,.35);
+}
+
+/* actions */
+.actions { display: flex; flex-direction: column; align-items: center; gap: 14px; margin: 26px 0 8px; }
+.lang-toggle { display: inline-flex; border: 1px solid rgba(201,162,39,.4); border-radius: 999px; overflow: hidden; }
+.lt { background: none; border: 0; color: var(--muted); font-family: var(--ui); font-size: 15px; padding: 7px 18px; cursor: pointer; }
+.lt.on { background: rgba(201,162,39,.15); color: var(--ivory); }
+.btns { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; }
+.btn {
+  font-family: var(--ui); font-size: 16px; font-weight: 400; cursor: pointer;
+  padding: 12px 22px; border-radius: 6px; border: 1px solid rgba(239,233,218,.25);
+  background: transparent; color: var(--ivory);
+}
+.btn:hover { border-color: var(--ivory); }
+.btn.primary { background: var(--sindoor); border-color: var(--sindoor); color: #fff; }
+.btn.primary:hover { filter: brightness(1.1); }
+.btn.ghost { border-style: dashed; color: var(--muted); }
+
+/* verse text */
+.verse-text { margin-top: 44px; border-top: 1px solid rgba(201,162,39,.25); padding-top: 34px; }
+.sa { font-family: var(--deva); font-weight: 400; font-size: clamp(24px, 5vw, 32px); line-height: 1.9; text-align: center; margin: 0 0 18px; }
+.tr-toggle { text-align: center; color: var(--muted); margin-bottom: 26px; }
+.tr-toggle summary { cursor: pointer; font-size: 14px; letter-spacing: .06em; }
+.tr { font-style: italic; font-family: var(--serif-en); line-height: 2; }
+.mh { font-family: var(--deva); color: var(--gold); font-weight: 400; font-size: 18px; margin: 26px 0 6px; }
+.meaning .hi { font-size: 18px; }
+.meaning .en { font-family: var(--serif-en); font-size: 17px; color: #d8d2c2; }
+
+/* pager */
+.pager { display: flex; justify-content: space-between; margin-top: 44px; font-size: 16px; }
+.pager .mid { color: var(--muted); }
+
+/* pitch on home */
+.pitch { margin-top: 40px; text-align: center; color: var(--muted); font-size: 16px; }
+
+/* chapters */
+.page-h { font-family: var(--deva); font-weight: 400; text-align: center; font-size: clamp(26px, 5vw, 34px); margin: 4px 0 30px; }
+.chapter { border-bottom: 1px solid rgba(201,162,39,.2); padding: 14px 0; }
+.chapter summary { cursor: pointer; display: flex; gap: 14px; align-items: baseline; flex-wrap: wrap; }
+.ch-n { color: var(--gold); font-family: var(--deva); }
+.ch-name { font-family: var(--deva); font-size: 19px; }
+.ch-en { color: var(--muted); font-size: 14px; }
+.verse-grid { display: flex; flex-wrap: wrap; gap: 8px; padding: 16px 0 6px; }
+.verse-grid a {
+  font-family: var(--deva); min-width: 44px; text-align: center; padding: 6px 8px;
+  border: 1px solid rgba(139,147,176,.35); border-radius: 5px; color: var(--ivory);
+}
+.verse-grid a:hover { border-color: var(--gold-hi); text-decoration: none; }
+
+/* prose + footer */
+.prose p { font-size: 17px; }
+.foot { text-align: center; color: var(--muted); font-size: 13px; padding: 30px 16px 40px; border-top: 1px solid rgba(201,162,39,.15); }
+.foot .fine { font-size: 12px; opacity: .8; }
+
+@media (prefers-reduced-motion: no-preference) {
+  #cardCanvas { transition: box-shadow .4s ease; }
+}
