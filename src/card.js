@@ -33,6 +33,13 @@
     return lines;
   }
 
+  /* Safari mis-anchors textAlign:'center' for Devanagari glyph runs
+     (WebKit computes the centre offset without complex shaping), so
+     centre manually: measureText shapes correctly in all engines. */
+  function fillCentered(text, y) {
+    ctx.fillText(text, (W - ctx.measureText(text).width) / 2, y);
+  }
+
   function fitLines(ctx, rawLines, font, maxW, startSize, minSize) {
     var size = startSize;
     while (size > minSize) {
@@ -70,12 +77,12 @@
     ctx.lineWidth = 1;
     ctx.strokeRect(50, 50, W - 100, H - 100);
 
-    ctx.textAlign = 'center';
+    ctx.textAlign = 'left';
 
     /* eyebrow */
     ctx.fillStyle = '#c9a227';
     ctx.font = '400 34px ' + DEVA;
-    ctx.fillText('॥ श्रीमद्भगवद्गीता ॥', W / 2, 130);
+    fillCentered('॥ श्रीमद्भगवद्गीता ॥', 130);
 
     /* shloka */
     var saLines = v.sa.split('\n').filter(Boolean);
@@ -96,7 +103,7 @@
 
     ctx.font = saSize + 'px ' + DEVA;
     ctx.fillStyle = '#efe9da';
-    saLines.forEach(function (l) { ctx.fillText(l, W / 2, y); y += saLH; });
+    saLines.forEach(function (l) { fillCentered(l, y); y += saLH; });
 
     /* gold rule with diamond */
     y += 10;
@@ -113,7 +120,7 @@
     /* meaning */
     ctx.fillStyle = '#d8d2c2';
     ctx.font = (state.lang === 'hi' ? '300 ' : '400 ') + mSize + 'px ' + (state.lang === 'hi' ? MUKTA : SERIF);
-    mLines.forEach(function (l) { ctx.fillText(l, W / 2, y); y += mLH; });
+    mLines.forEach(function (l) { fillCentered(l, y); y += mLH; });
 
     /* footer: reference + site */
     ctx.fillStyle = '#c9a227';
@@ -122,10 +129,10 @@
       ? 'अध्याय ' + dev(state.verse.c) + ' · श्लोक ' + dev(state.verse.v)
       : 'Chapter ' + state.verse.c + ' · Verse ' + state.verse.v;
     if (state.lang === 'en') ctx.font = '600 28px ' + SERIF;
-    ctx.fillText(ref, W / 2, H - 118);
+    fillCentered(ref, H - 118);
     ctx.fillStyle = 'rgba(139,147,176,0.9)';
     ctx.font = '300 24px ' + MUKTA;
-    ctx.fillText('geetasar.com', W / 2, H - 72);
+    fillCentered('geetasar.com', H - 72);
   }
 
   /* ---------- share / download ---------- */
