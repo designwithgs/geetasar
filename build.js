@@ -40,8 +40,8 @@ function shell({ title, desc, url, body, inlineData }) {
 <script defer src="https://cloud.umami.is/script.js" data-website-id="YOUR-UMAMI-ID"></script>
 -->
 <!--
-<script async src="https://www.googletagmanager.com/gtag/js?id=G-XXXXXXX"></script>
-<script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments)};gtag('js',new Date());gtag('config','G-XXXXXXX');</script>
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-73YRW6E20G"></script>
+<script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments)};gtag('js',new Date());gtag('config','G-73YRW6E20G');</script>
 -->
 ${inlineData ? `<script>window.__VERSE__=${inlineData};</script>` : ''}
 </head>
