@@ -54,7 +54,8 @@ secondary signal). Target: 50 organic shares/week before any v1.1 work begins
    **English** (default) · **हिन्दी** · **Hinglish**. Switching redraws the card
    in place; nothing else on the page changes.
 4. **Share on WhatsApp** (primary button): opens the native share sheet with the
-   card attached as a PNG file. **Download card** (secondary): saves the PNG.
+   card attached as a PNG file. **Share** (secondary): same share sheet for any
+   app, with graceful fallbacks (see 4.2). **Download card**: saves the PNG.
 5. On the home page only, an **Open this verse →** ghost link goes to the
    verse's permalink.
 
@@ -62,9 +63,12 @@ secondary signal). Target: 50 organic shares/week before any v1.1 work begins
 
 - **Loading:** canvas is blank until fonts load (typically <1s; a safety redraw
   fires at 1.2s). No spinner — the page around it is already meaningful.
-- **No Web Share support (desktop):** Share button falls back to downloading the
-  PNG *and* opening `wa.me` prefilled with the verse's permalink, so the user
-  can attach the downloaded image manually.
+- **No Web Share support (desktop):** the WhatsApp button falls back to
+  downloading the PNG *and* opening `wa.me` prefilled with the verse's
+  permalink, so the user can attach the downloaded image manually. The generic
+  Share button degrades in steps: file share → link share (`navigator.share`
+  without files) → copy permalink to clipboard with a transient
+  "Link copied ✓" label.
 - **Share cancelled:** silently ignored (no error UI).
 
 ## 5. Functional spec
@@ -78,7 +82,8 @@ secondary signal). Target: 50 organic shares/week before any v1.1 work begins
 | FR5 | Same daily verse for everyone, worldwide | `todaysId()`: days since 1 Jan 2026 **in IST**, mod verse count → verse id. No server, no cron |
 | FR6 | Share attaches the PNG file, not a link | `navigator.share({ files: [File] })` when `canShare` passes |
 | FR7 | Filename is meaningful | `geetasar-{c}-{v}.png` |
-| FR8 | Analytics on share/download | `card-share` / `card-download` fired to GA4 (and Umami if enabled) |
+| FR8 | Analytics on share/download | `card-share` / `card-download` fired to GA4 (and Umami if enabled); clipboard fallback fires `link-copy` |
+| FR10 | Generic share alongside WhatsApp | `shareAny()`: file share → link share → clipboard copy |
 | FR9 | Works with no build-time rendering deps | Everything is vanilla canvas; the repo stays zero-dependency |
 
 ### 5.1 Language data
@@ -156,7 +161,11 @@ verse ──▶ card.js state ──▶ draw() on canvas ──▶ toBlob() ─�
 - Mobile (Web Share Level 2): `new File([blob], 'geetasar-c-v.png')` →
   `navigator.share({ files, title, text: 'Today's shloka · <permalink>' })`.
   The text carries the permalink so even a text-only share target gets a link.
-- Desktop fallback: `download()` + open `wa.me/?text=<permalink>` in a new tab.
+- Desktop fallback (WhatsApp button): `download()` + open `wa.me/?text=<permalink>`
+  in a new tab.
+- Generic Share button (`shareAny()`): identical file share on mobile; on
+  browsers without file share it tries a link-only `navigator.share`, then falls
+  back to copying the permalink (`link-copy` event, transient button label).
 - Tracking fires only on confirmed share (`.then`), not on cancel.
 
 ## 8. Edge cases handled

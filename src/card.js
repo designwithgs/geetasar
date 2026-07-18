@@ -159,10 +159,16 @@
     return 'geetasar-' + state.verse.c + '-' + state.verse.v + '.png';
   }
 
-  function share() {
+  function withFile(fn) {
     toBlob().then(function (blob) {
       var file = new File([blob], fileName(), { type: 'image/png' });
       var pageUrl = 'https://geetasar.com/verse/' + state.verse.c + '-' + state.verse.v + '/';
+      fn(file, pageUrl);
+    });
+  }
+
+  function share() {
+    withFile(function (file, pageUrl) {
       if (navigator.canShare && navigator.canShare({ files: [file] })) {
         navigator.share({ files: [file], title: 'GeetaSar', text: 'Today’s shloka · ' + pageUrl })
           .then(function () { track('card-share'); })
@@ -170,6 +176,31 @@
       } else {
         download();
         window.open('https://wa.me/?text=' + encodeURIComponent('Today’s shloka · ' + pageUrl), '_blank');
+      }
+    });
+  }
+
+  function shareAny() {
+    withFile(function (file, pageUrl) {
+      var text = 'Today’s shloka · ' + pageUrl;
+      if (navigator.canShare && navigator.canShare({ files: [file] })) {
+        navigator.share({ files: [file], title: 'GeetaSar', text: text })
+          .then(function () { track('card-share'); })
+          .catch(function () {});
+      } else if (navigator.share) {
+        navigator.share({ title: 'GeetaSar', text: text, url: pageUrl })
+          .then(function () { track('card-share'); })
+          .catch(function () {});
+      } else if (navigator.clipboard) {
+        navigator.clipboard.writeText(pageUrl).then(function () {
+          var b = document.getElementById('shareAnyBtn');
+          if (b) {
+            var old = b.textContent;
+            b.textContent = 'Link copied ✓';
+            setTimeout(function () { b.textContent = old; }, 1600);
+          }
+          track('link-copy');
+        });
       }
     });
   }
@@ -217,8 +248,10 @@
     });
   });
   var sb = document.getElementById('shareBtn');
+  var sa = document.getElementById('shareAnyBtn');
   var db = document.getElementById('dlBtn');
   if (sb) sb.addEventListener('click', share);
+  if (sa) sa.addEventListener('click', shareAny);
   if (db) db.addEventListener('click', download);
 
   if (window.__VERSE__) {

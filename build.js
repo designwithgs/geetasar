@@ -138,6 +138,7 @@ function verseBlock(v, { isToday }) {
     </div>
     <div class="btns">
       <button id="shareBtn" class="btn primary">Share on WhatsApp</button>
+      <button id="shareAnyBtn" class="btn">Share</button>
       <button id="dlBtn" class="btn">Download card</button>
     </div>
   </section>
@@ -164,7 +165,7 @@ function verseBlock(v, { isToday }) {
 
   <div class="ornament"></div>
 </main>
-<script src="/card.js?v=5" defer></script>`;
+<script src="/card.js?v=6" defer></script>`;
 }
 
 function prevNext(v) {
@@ -198,6 +199,7 @@ const indexBody = `
     </div>
     <div class="btns">
       <button id="shareBtn" class="btn primary">Share on WhatsApp</button>
+      <button id="shareAnyBtn" class="btn">Share</button>
       <button id="dlBtn" class="btn">Download card</button>
       <a id="permalink" class="btn ghost" href="/gita/">Open this verse →</a>
     </div>
@@ -217,7 +219,7 @@ const indexBody = `
   </section>
 </main>
 <script>window.__TODAY__={count:${verses.length}};</script>
-<script src="/card.js?v=5" defer></script>`;
+<script src="/card.js?v=6" defer></script>`;
 
 fs.writeFileSync(
   path.join(DIST, 'index.html'),
