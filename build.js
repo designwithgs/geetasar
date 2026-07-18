@@ -111,7 +111,7 @@ ${inlineData ? `<script>window.__VERSE__=${inlineData};</script>` : ''}
 ${body}
 <footer class="foot">
   <p>GeetaSar — one shloka a day, free forever. No ads, no login, no watermark.</p>
-  <p class="fine">Sanskrit text is eternal &amp; public domain. Hindi: Swami Ramsukhdas · English: Shri Purohit Swami · Data: <a href="https://github.com/gita/gita">gita/gita</a> (Unlicense).</p>
+  <p class="fine">Sanskrit text is eternal &amp; public domain. Hindi: Swami Ramsukhdas · English: Shri Purohit Swami.</p>
 </footer>
 <script src="/reveal.js" defer></script>
 </body>
