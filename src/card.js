@@ -89,11 +89,15 @@
     ctx.fillStyle = '#efe9da';
     var saSize = fitLines(ctx, saLines, DEVA, W - 200, saLines.length > 3 ? 46 : 54, 34);
     var saLH = saSize * 1.75;
-    var meaning = (state.lang === 'hi' ? v.hi : v.en) || '';
+    var meaning = (state.lang === 'hi' ? v.hi : state.lang === 'hn' ? v.hn : v.en) || '';
+    function meaningFont(size) {
+      if (state.lang === 'en') return '400 ' + size + 'px ' + SERIF;
+      return (state.lang === 'hi' ? '300 ' : '400 ') + size + 'px ' + MUKTA;
+    }
 
     /* meaning sizing first so we can centre the whole composition */
     var mSize = meaning.length > 260 ? 30 : meaning.length > 170 ? 34 : 38;
-    ctx.font = (state.lang === 'hi' ? '300 ' : '400 ') + mSize + 'px ' + (state.lang === 'hi' ? MUKTA : SERIF);
+    ctx.font = meaningFont(mSize);
     var mLines = wrap(ctx, meaning, W - 220);
     if (mLines.length > 7) { mLines = mLines.slice(0, 7); mLines[6] += ' …'; }
     var mLH = mSize * 1.6;
@@ -119,16 +123,22 @@
 
     /* meaning */
     ctx.fillStyle = '#d8d2c2';
-    ctx.font = (state.lang === 'hi' ? '300 ' : '400 ') + mSize + 'px ' + (state.lang === 'hi' ? MUKTA : SERIF);
+    ctx.font = meaningFont(mSize);
     mLines.forEach(function (l) { fillCentered(l, y); y += mLH; });
 
     /* footer: reference + site */
     ctx.fillStyle = '#c9a227';
-    ctx.font = '400 32px ' + DEVA;
-    var ref = state.lang === 'hi'
-      ? 'अध्याय ' + dev(state.verse.c) + ' · श्लोक ' + dev(state.verse.v)
-      : 'Chapter ' + state.verse.c + ' · Verse ' + state.verse.v;
-    if (state.lang === 'en') ctx.font = '600 28px ' + SERIF;
+    var ref;
+    if (state.lang === 'hi') {
+      ctx.font = '400 32px ' + DEVA;
+      ref = 'अध्याय ' + dev(state.verse.c) + ' · श्लोक ' + dev(state.verse.v);
+    } else if (state.lang === 'hn') {
+      ctx.font = '500 28px ' + MUKTA;
+      ref = 'Adhyay ' + state.verse.c + ' · Shlok ' + state.verse.v;
+    } else {
+      ctx.font = '600 28px ' + SERIF;
+      ref = 'Chapter ' + state.verse.c + ' · Verse ' + state.verse.v;
+    }
     fillCentered(ref, H - 118);
     ctx.fillStyle = 'rgba(139,147,176,0.9)';
     ctx.font = '300 24px ' + MUKTA;
@@ -191,7 +201,7 @@
   function ready(v) {
     state.verse = v;
     fillVerseText(v);
-    var fonts = ['400 54px "Tiro Devanagari Sanskrit"', '300 38px "Mukta"', '400 38px "Source Serif 4"'];
+    var fonts = ['400 54px "Tiro Devanagari Sanskrit"', '300 38px "Mukta"', '400 38px "Mukta"', '500 28px "Mukta"', '400 38px "Source Serif 4"'];
     Promise.all(fonts.map(function (f) { return document.fonts.load(f, 'अ'); }))
       .then(draw)
       .catch(draw);
