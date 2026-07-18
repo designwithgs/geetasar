@@ -11,7 +11,7 @@
   var DEV = { 0: '०', 1: '१', 2: '२', 3: '३', 4: '४', 5: '५', 6: '६', 7: '७', 8: '८', 9: '९' };
   function dev(n) { return String(n).replace(/\d/g, function (d) { return DEV[d]; }); }
 
-  var state = { verse: null, lang: 'hi' };
+  var state = { verse: null, lang: 'en' };
 
   /* ---------- daily verse (IST for everyone — the day's verse from India) ---------- */
   function todaysId(count) {
@@ -154,12 +154,12 @@
       var file = new File([blob], fileName(), { type: 'image/png' });
       var pageUrl = 'https://geetasar.com/verse/' + state.verse.c + '-' + state.verse.v + '/';
       if (navigator.canShare && navigator.canShare({ files: [file] })) {
-        navigator.share({ files: [file], title: 'गीतासार', text: 'आज का श्लोक · ' + pageUrl })
+        navigator.share({ files: [file], title: 'GeetaSar', text: 'Today’s shloka · ' + pageUrl })
           .then(function () { track('card-share'); })
           .catch(function () {});
       } else {
         download();
-        window.open('https://wa.me/?text=' + encodeURIComponent('आज का श्लोक · ' + pageUrl), '_blank');
+        window.open('https://wa.me/?text=' + encodeURIComponent('Today’s shloka · ' + pageUrl), '_blank');
       }
     });
   }

@@ -11,14 +11,12 @@ const DIST = path.join(__dirname, 'dist');
 const verses = JSON.parse(fs.readFileSync(path.join(__dirname, 'data/verses.json'), 'utf8'));
 const chapters = JSON.parse(fs.readFileSync(path.join(__dirname, 'data/chapters.json'), 'utf8'));
 
-const DEV_DIGITS = { '0': '०', '1': '१', '2': '२', '3': '३', '4': '४', '5': '५', '6': '६', '7': '७', '8': '८', '9': '९' };
-const dev = (n) => String(n).replace(/\d/g, (d) => DEV_DIGITS[d]);
 const esc = (s) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 
 /* ---------- shared page shell ---------- */
 function shell({ title, desc, url, body, inlineData }) {
   return `<!doctype html>
-<html lang="hi">
+<html lang="en">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -48,13 +46,13 @@ ${inlineData ? `<script>window.__VERSE__=${inlineData};</script>` : ''}
 <header class="top">
   <a class="brand" href="/"><span class="mark" aria-hidden="true"></span>GeetaSar</a>
   <nav>
-    <a href="/gita/">सभी श्लोक</a>
+    <a href="/gita/">All Shlokas</a>
     <a href="/about/">About</a>
   </nav>
 </header>
 ${body}
 <footer class="foot">
-  <p>गीतासार — one shloka a day, free forever. No ads, no login, no watermark.</p>
+  <p>GeetaSar — one shloka a day, free forever. No ads, no login, no watermark.</p>
   <p class="fine">Sanskrit text is eternal &amp; public domain. Hindi: Swami Ramsukhdas · English: Shri Purohit Swami · Data: <a href="https://github.com/gita/gita">gita/gita</a> (Unlicense).</p>
 </footer>
 <script src="/reveal.js" defer></script>
@@ -68,7 +66,7 @@ function verseBlock(v, { isToday }) {
   const trHtml = esc(v.tr).replace(/\n/g, '<br>');
   return `
 <main class="wrap">
-  <p class="eyebrow">${isToday ? 'आज का श्लोक · Today’s shloka' : `अध्याय ${dev(v.c)} · श्लोक ${dev(v.v)}`}</p>
+  <p class="eyebrow">${isToday ? 'Today’s Shloka' : `Chapter ${v.c} · Verse ${v.v}`}</p>
 
   <section class="card-stage">
     <canvas id="cardCanvas" width="1080" height="1080" aria-label="Shareable verse card preview"></canvas>
@@ -76,8 +74,8 @@ function verseBlock(v, { isToday }) {
 
   <section class="actions" aria-label="Share">
     <div class="lang-toggle" role="group" aria-label="Card language">
-      <button class="lt" data-lang="hi" aria-pressed="true">हिन्दी</button>
-      <button class="lt" data-lang="en" aria-pressed="false">English</button>
+      <button class="lt" data-lang="en" aria-pressed="true">English</button>
+      <button class="lt" data-lang="hi" aria-pressed="false">हिन्दी</button>
     </div>
     <div class="btns">
       <button id="shareBtn" class="btn primary">Share on WhatsApp</button>
@@ -94,10 +92,10 @@ function verseBlock(v, { isToday }) {
       <p class="tr">${trHtml}</p>
     </details>
     <div class="meaning">
-      <h2 class="mh">अर्थ</h2>
-      <p lang="hi" class="hi">${esc(v.hi)}</p>
       <h2 class="mh">Meaning</h2>
       <p lang="en" class="en">${esc(v.en)}</p>
+      <h2 class="mh">Hindi Meaning</h2>
+      <p lang="hi" class="hi">${esc(v.hi)}</p>
     </div>
   </article>
 
@@ -107,16 +105,16 @@ function verseBlock(v, { isToday }) {
 
   <div class="ornament"></div>
 </main>
-<script src="/card.js?v=3" defer></script>`;
+<script src="/card.js?v=4" defer></script>`;
 }
 
 function prevNext(v) {
   const i = verses.findIndex((x) => x.id === v.id);
   const p = verses[i - 1];
   const n = verses[i + 1];
-  return `${p ? `<a href="/verse/${p.c}-${p.v}/">← ${dev(p.c)}.${dev(p.v)}</a>` : '<span></span>'}
-    <a href="/gita/" class="mid">सभी अध्याय</a>
-    ${n ? `<a href="/verse/${n.c}-${n.v}/">${dev(n.c)}.${dev(n.v)} →</a>` : '<span></span>'}`;
+  return `${p ? `<a href="/verse/${p.c}-${p.v}/">← ${p.c}.${p.v}</a>` : '<span></span>'}
+    <a href="/gita/" class="mid">All Chapters</a>
+    ${n ? `<a href="/verse/${n.c}-${n.v}/">${n.c}.${n.v} →</a>` : '<span></span>'}`;
 }
 
 /* ---------- build ---------- */
@@ -131,12 +129,12 @@ for (const v of verses) {
 /* index — today's verse resolved client-side (IST), data fetched from /v/{id}.json */
 const indexBody = `
 <main class="wrap">
-  <p class="eyebrow">आज का श्लोक · Today’s shloka</p>
+  <p class="eyebrow">Today’s Shloka</p>
   <section class="card-stage"><canvas id="cardCanvas" width="1080" height="1080" aria-label="Shareable verse card preview"></canvas></section>
   <section class="actions" aria-label="Share">
     <div class="lang-toggle" role="group" aria-label="Card language">
-      <button class="lt" data-lang="hi" aria-pressed="true">हिन्दी</button>
-      <button class="lt" data-lang="en" aria-pressed="false">English</button>
+      <button class="lt" data-lang="en" aria-pressed="true">English</button>
+      <button class="lt" data-lang="hi" aria-pressed="false">हिन्दी</button>
     </div>
     <div class="btns">
       <button id="shareBtn" class="btn primary">Share on WhatsApp</button>
@@ -149,8 +147,8 @@ const indexBody = `
     <h1 class="sa" lang="sa"></h1>
     <details class="tr-toggle"><summary>Transliteration</summary><p class="tr"></p></details>
     <div class="meaning">
-      <h2 class="mh">अर्थ</h2><p lang="hi" class="hi"></p>
       <h2 class="mh">Meaning</h2><p lang="en" class="en"></p>
+      <h2 class="mh">Hindi Meaning</h2><p lang="hi" class="hi"></p>
     </div>
   </article>
   <div class="ornament"></div>
@@ -159,12 +157,12 @@ const indexBody = `
   </section>
 </main>
 <script>window.__TODAY__={count:${verses.length}};</script>
-<script src="/card.js?v=3" defer></script>`;
+<script src="/card.js?v=4" defer></script>`;
 
 fs.writeFileSync(
   path.join(DIST, 'index.html'),
   shell({
-    title: 'गीतासार — आज का श्लोक | Bhagavad Gita, one shloka a day',
+    title: 'GeetaSar — Today’s Shloka | Bhagavad Gita, one shloka a day',
     desc: 'A new Bhagavad Gita shloka every day. Sanskrit, Hindi and English meaning, with a beautiful card to share on WhatsApp. Free, no ads, no login.',
     url: SITE + '/',
     body: indexBody,
@@ -175,7 +173,7 @@ fs.writeFileSync(
 for (const v of verses) {
   const dir = path.join(DIST, 'verse', `${v.c}-${v.v}`);
   fs.mkdirSync(dir, { recursive: true });
-  const title = `गीता ${v.c}.${v.v} — ${chapters[v.c] ? chapters[v.c].en : ''} | GeetaSar`;
+  const title = `Gita ${v.c}.${v.v} — ${chapters[v.c] ? chapters[v.c].en : ''} | GeetaSar`;
   const desc = v.en.slice(0, 155);
   fs.writeFileSync(
     path.join(dir, 'index.html'),
@@ -194,16 +192,16 @@ const byCh = {};
 for (const v of verses) (byCh[v.c] = byCh[v.c] || []).push(v);
 const chBody = `
 <main class="wrap">
-  <p class="eyebrow">श्रीमद्भगवद्गीता</p>
-  <h1 class="page-h">सभी ${dev(18)} अध्याय · ${verses.length} श्लोक</h1>
+  <p class="eyebrow">Shrimad Bhagavad Gita</p>
+  <h1 class="page-h">All 18 Chapters · ${verses.length} Shlokas</h1>
   <div class="ornament"></div>
   <section class="reveal">
   ${Object.keys(byCh)
     .map((c) => {
       const name = chapters[c] || { hi: '', en: '' };
       return `<details class="chapter" ${c === '1' ? 'open' : ''}>
-  <summary><span class="ch-n">अध्याय ${dev(c)}</span> <span class="ch-name" lang="sa">${esc(name.hi)}</span> <span class="ch-en">${esc(name.en)}</span></summary>
-  <div class="verse-grid">${byCh[c].map((v) => `<a href="/verse/${v.c}-${v.v}/">${dev(v.v)}</a>`).join('')}</div>
+  <summary><span class="ch-n">Chapter ${c}</span> <span class="ch-name" lang="sa">${esc(name.hi)}</span> <span class="ch-en">${esc(name.en)}</span></summary>
+  <div class="verse-grid">${byCh[c].map((v) => `<a href="/verse/${v.c}-${v.v}/">${v.v}</a>`).join('')}</div>
 </details>`;
     })
     .join('\n')}
@@ -212,7 +210,7 @@ const chBody = `
 fs.mkdirSync(path.join(DIST, 'gita'), { recursive: true });
 fs.writeFileSync(
   path.join(DIST, 'gita', 'index.html'),
-  shell({ title: 'सभी श्लोक — Bhagavad Gita chapters | GeetaSar', desc: 'All 18 chapters and 700 shlokas of the Bhagavad Gita with Hindi and English meaning.', url: SITE + '/gita/', body: chBody })
+  shell({ title: 'All Shlokas — Bhagavad Gita chapters | GeetaSar', desc: 'All 18 chapters and 700 shlokas of the Bhagavad Gita with Hindi and English meaning.', url: SITE + '/gita/', body: chBody })
 );
 
 /* about */
@@ -227,7 +225,7 @@ fs.mkdirSync(path.join(DIST, 'about'), { recursive: true });
 fs.writeFileSync(path.join(DIST, 'about', 'index.html'), shell({ title: 'About — GeetaSar', desc: 'One Bhagavad Gita shloka a day, beautifully typeset, free to share.', url: SITE + '/about/', body: aboutBody }));
 
 /* 404 */
-fs.writeFileSync(path.join(DIST, '404.html'), shell({ title: 'Not found — GeetaSar', desc: 'Page not found.', url: SITE + '/404', body: `<main class="wrap prose"><h1 class="page-h">यह पृष्ठ नहीं मिला</h1><p><a href="/">आज का श्लोक देखें →</a></p></main>` }));
+fs.writeFileSync(path.join(DIST, '404.html'), shell({ title: 'Not found — GeetaSar', desc: 'Page not found.', url: SITE + '/404', body: `<main class="wrap prose"><h1 class="page-h">Page not found</h1><p><a href="/">See today’s shloka →</a></p></main>` }));
 
 /* sitemap + robots */
 const urls = [`${SITE}/`, `${SITE}/gita/`, `${SITE}/about/`, ...verses.map((v) => `${SITE}/verse/${v.c}-${v.v}/`)];
