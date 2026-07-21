@@ -46,6 +46,34 @@
     ctx.fillText(text, (W - ctx.measureText(text).width) / 2, y);
   }
 
+  /* Some verses store the whole shloka as one line. Break those on
+     danda (।/॥) boundaries so multi-line layout matches the rest of
+     the data: a fused speaker prefix (…उवाच) gets its own line and
+     the trailing verse number (e.g. ।।१५.१।।) stays with its pada. */
+  function shlokaLines(sa) {
+    var lines = sa.split('\n').filter(Boolean);
+    if (lines.length > 1) return lines;
+    var out = [];
+    (lines[0] || '').replace(/^(.{0,20}?(?:उवाच|[ुू]वाच))(?=[^\s।॥])/, '$1\n').split('\n').forEach(function (part) {
+      var buf = '';
+      for (var i = 0; i < part.length; i++) {
+        buf += part.charAt(i);
+        if ((part.charAt(i) === '।' || part.charAt(i) === '॥') &&
+            part.charAt(i + 1) !== '।' && part.charAt(i + 1) !== '॥') {
+          out.push(buf.trim());
+          buf = '';
+        }
+      }
+      if (buf.trim()) out.push(buf.trim());
+    });
+    var last = out[out.length - 1];
+    if (out.length > 1 && last.replace(/[।॥\s]/g, '').length <= 8) {
+      out[out.length - 2] += last;
+      out.pop();
+    }
+    return out;
+  }
+
   function fitLines(ctx, rawLines, font, maxW, startSize, minSize) {
     var size = startSize;
     while (size > minSize) {
@@ -99,9 +127,16 @@
     fillCentered('॥ श्रीमद्भगवद्गीता ॥', 130);
 
     /* shloka */
-    var saLines = v.sa.split('\n').filter(Boolean);
+    var saLines = shlokaLines(v.sa);
     ctx.fillStyle = '#efe9da';
     var saSize = fitLines(ctx, saLines, DEVA, W - 200, saLines.length > 3 ? 46 : 54, 34);
+    /* last resort: a pada that still overflows at the floor size wraps on spaces */
+    if (saLines.some(function (l) { return ctx.measureText(l).width > W - 200; })) {
+      var rewrapped = [];
+      saLines.forEach(function (l) { rewrapped = rewrapped.concat(wrap(ctx, l, W - 200)); });
+      saLines = rewrapped;
+      saSize = fitLines(ctx, saLines, DEVA, W - 200, saSize, 34);
+    }
     var saLH = saSize * 1.75;
     var meaning = (state.lang === 'hi' ? v.hi : state.lang === 'hn' ? v.hn : v.en) || '';
     function meaningFont(size) {

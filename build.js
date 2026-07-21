@@ -175,7 +175,7 @@ function verseBlock(v, { isToday }) {
 
   <div class="ornament"></div>
 </main>
-<script src="/card.js?v=7" defer></script>`;
+<script src="/card.js?v=8" defer></script>`;
 }
 
 function prevNext(v) {
@@ -229,7 +229,7 @@ const indexBody = `
   </section>
 </main>
 <script>window.__TODAY__={count:${verses.length}};</script>
-<script src="/card.js?v=7" defer></script>`;
+<script src="/card.js?v=8" defer></script>`;
 
 fs.writeFileSync(
   path.join(DIST, 'index.html'),
