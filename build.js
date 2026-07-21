@@ -69,7 +69,17 @@ const hinglish = (s) => s
   .replace(/[०-९]/g, (d) => String(d.charCodeAt(0) - 0x0966))
   .replace(/[ऀ-ॿ]+/g, hnWord);
 
-for (const v of verses) v.hn = hinglish(v.hi);
+/* chapter → background motif on the shareable card (line-art SVGs in static/motifs/) */
+const MOTIF_BY_CHAPTER = {
+  1: 'bow', 2: 'chakra', 3: 'flame', 4: 'flame', 5: 'lotus', 6: 'diya',
+  7: 'om', 8: 'om', 9: 'om', 10: 'om', 11: 'bow', 12: 'lotus',
+  13: 'tree', 14: 'tree', 15: 'tree', 16: 'conch', 17: 'conch', 18: 'conch',
+};
+
+for (const v of verses) {
+  v.hn = hinglish(v.hi);
+  v.motif = MOTIF_BY_CHAPTER[v.c];
+}
 
 /* ---------- shared page shell ---------- */
 function shell({ title, desc, url, body, inlineData }) {
@@ -165,7 +175,7 @@ function verseBlock(v, { isToday }) {
 
   <div class="ornament"></div>
 </main>
-<script src="/card.js?v=6" defer></script>`;
+<script src="/card.js?v=7" defer></script>`;
 }
 
 function prevNext(v) {
@@ -219,7 +229,7 @@ const indexBody = `
   </section>
 </main>
 <script>window.__TODAY__={count:${verses.length}};</script>
-<script src="/card.js?v=6" defer></script>`;
+<script src="/card.js?v=7" defer></script>`;
 
 fs.writeFileSync(
   path.join(DIST, 'index.html'),
@@ -296,6 +306,6 @@ fs.writeFileSync(path.join(DIST, 'robots.txt'), `User-agent: *\nAllow: /\nSitema
 
 /* static assets */
 for (const f of ['style.css', 'card.js', 'reveal.js']) fs.copyFileSync(path.join(__dirname, 'src', f), path.join(DIST, f));
-for (const f of fs.readdirSync(path.join(__dirname, 'static'))) fs.copyFileSync(path.join(__dirname, 'static', f), path.join(DIST, f));
+fs.cpSync(path.join(__dirname, 'static'), DIST, { recursive: true });
 
 console.log(`Built ${urls.length} pages → dist/`);

@@ -8,10 +8,16 @@
   var ctx = canvas.getContext('2d');
   var W = 1080, H = 1080;
 
+  /* chapter motif backdrop — tunable placement */
+  var MOTIF_ALPHA = 0.08;
+  var MOTIF_SIZE = 720;
+  var MOTIF_X = W - MOTIF_SIZE * 0.55; /* half-bleeds off the bottom-right */
+  var MOTIF_Y = H - MOTIF_SIZE * 0.55;
+
   var DEV = { 0: '०', 1: '१', 2: '२', 3: '३', 4: '४', 5: '५', 6: '६', 7: '७', 8: '८', 9: '९' };
   function dev(n) { return String(n).replace(/\d/g, function (d) { return DEV[d]; }); }
 
-  var state = { verse: null, lang: 'en' };
+  var state = { verse: null, lang: 'en', motifImg: null };
 
   /* ---------- daily verse (IST for everyone — the day's verse from India) ---------- */
   function todaysId(count) {
@@ -68,6 +74,14 @@
     bg.addColorStop(1, '#10152a');
     ctx.fillStyle = bg;
     ctx.fillRect(0, 0, W, H);
+
+    /* faint chapter motif behind everything but the background */
+    var mi = state.motifImg;
+    if (mi && mi.complete && mi.naturalWidth > 0) {
+      ctx.globalAlpha = MOTIF_ALPHA;
+      ctx.drawImage(mi, MOTIF_X, MOTIF_Y, MOTIF_SIZE, MOTIF_SIZE);
+      ctx.globalAlpha = 1;
+    }
 
     /* double manuscript border */
     ctx.strokeStyle = 'rgba(201,162,39,0.9)';
@@ -233,7 +247,17 @@
     state.verse = v;
     fillVerseText(v);
     var fonts = ['400 54px "Tiro Devanagari Sanskrit"', '300 38px "Mukta"', '400 38px "Mukta"', '500 28px "Mukta"', '400 38px "Source Serif 4"'];
-    Promise.all(fonts.map(function (f) { return document.fonts.load(f, 'अ'); }))
+    var waits = fonts.map(function (f) { return document.fonts.load(f, 'अ'); });
+    if (v.motif) {
+      var img = new Image();
+      state.motifImg = img;
+      waits.push(new Promise(function (res) {
+        img.onload = res;
+        img.onerror = res; /* a missing motif must never block the card */
+        img.src = '/motifs/' + v.motif + '.svg';
+      }));
+    }
+    Promise.all(waits)
       .then(draw)
       .catch(draw);
     setTimeout(draw, 1200); // safety redraw once fonts settle

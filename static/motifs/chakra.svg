@@ -1,0 +1,13 @@
+<svg width="720" height="720" viewBox="0 0 720 720" xmlns="http://www.w3.org/2000/svg" fill="none" stroke="#c9a227" stroke-width="10" stroke-linecap="round" stroke-linejoin="round">
+  <!-- PLACEHOLDER — pending art direction. Dharma-chakra, eight spokes (ch 2). -->
+  <circle cx="360" cy="360" r="250"/>
+  <circle cx="360" cy="360" r="60"/>
+  <path d="M420 360 L610 360"/>
+  <path d="M300 360 L110 360"/>
+  <path d="M360 300 L360 110"/>
+  <path d="M360 420 L360 610"/>
+  <path d="M402 318 L537 183"/>
+  <path d="M318 318 L183 183"/>
+  <path d="M402 402 L537 537"/>
+  <path d="M318 402 L183 537"/>
+</svg>

@@ -1,0 +1,12 @@
+<svg width="720" height="720" viewBox="0 0 720 720" xmlns="http://www.w3.org/2000/svg" fill="none" stroke="#c9a227" stroke-width="10" stroke-linecap="round" stroke-linejoin="round">
+  <!-- PLACEHOLDER — pending art direction. Gandiva bow with drawn arrow (ch 1, 11). -->
+  <path d="M220 120 C470 300 470 420 220 600"/>
+  <path d="M220 120 L220 600"/>
+  <path d="M110 360 L590 360"/>
+  <path d="M590 360 L530 328"/>
+  <path d="M590 360 L530 392"/>
+  <path d="M110 360 L155 326"/>
+  <path d="M110 360 L155 394"/>
+  <path d="M150 360 L195 326"/>
+  <path d="M150 360 L195 394"/>
+</svg>

@@ -1,0 +1,8 @@
+<svg width="720" height="720" viewBox="0 0 720 720" xmlns="http://www.w3.org/2000/svg" fill="none" stroke="#c9a227" stroke-width="10" stroke-linecap="round" stroke-linejoin="round">
+  <!-- PLACEHOLDER — pending art direction. Om / pranava (ch 7–10). -->
+  <path d="M255 265 C330 200 435 220 432 300 C430 360 365 390 315 382"/>
+  <path d="M315 382 C405 375 465 425 460 505 C453 595 345 630 268 592 C232 574 216 542 220 510"/>
+  <path d="M432 430 C495 395 555 425 558 485 C560 525 532 552 498 550"/>
+  <path d="M282 150 C315 195 405 195 438 150"/>
+  <circle cx="360" cy="100" r="16"/>
+</svg>
