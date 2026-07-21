@@ -1,0 +1,12 @@
+<svg width="720" height="720" viewBox="0 0 720 720" xmlns="http://www.w3.org/2000/svg" fill="none" stroke="#c9a227" stroke-width="10" stroke-linecap="round" stroke-linejoin="round">
+  <!-- PLACEHOLDER — pending art direction. Ashvattha tree (ch 13–15). -->
+  <path d="M360 630 L360 400"/>
+  <path d="M360 490 C295 455 250 415 230 350"/>
+  <path d="M360 490 C425 455 470 415 490 350"/>
+  <path d="M360 400 C325 355 315 315 325 265"/>
+  <path d="M360 400 C395 355 405 315 395 265"/>
+  <path d="M195 330 C165 220 255 130 360 130 C465 130 555 220 525 330"/>
+  <path d="M230 350 L230 430"/>
+  <path d="M490 350 L490 430"/>
+  <path d="M230 630 L490 630"/>
+</svg>

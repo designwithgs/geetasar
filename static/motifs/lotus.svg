@@ -1,0 +1,9 @@
+<svg width="720" height="720" viewBox="0 0 720 720" xmlns="http://www.w3.org/2000/svg" fill="none" stroke="#c9a227" stroke-width="10" stroke-linecap="round" stroke-linejoin="round">
+  <!-- PLACEHOLDER — pending art direction. Lotus, five petals over water (ch 5, 12). -->
+  <path d="M360 160 C310 250 305 340 360 420 C415 340 410 250 360 160 Z"/>
+  <path d="M245 235 C225 320 250 395 330 435 C340 350 310 285 245 235 Z"/>
+  <path d="M475 235 C495 320 470 395 390 435 C380 350 410 285 475 235 Z"/>
+  <path d="M145 350 C155 425 215 480 325 490 C305 415 240 365 145 350 Z"/>
+  <path d="M575 350 C565 425 505 480 395 490 C415 415 480 365 575 350 Z"/>
+  <path d="M225 545 Q360 605 495 545"/>
+</svg>

@@ -1,0 +1,7 @@
+<svg width="720" height="720" viewBox="0 0 720 720" xmlns="http://www.w3.org/2000/svg" fill="none" stroke="#c9a227" stroke-width="10" stroke-linecap="round" stroke-linejoin="round">
+  <!-- PLACEHOLDER — pending art direction. Diya, lamp in a windless place (ch 6, BG 6.19). -->
+  <path d="M360 230 C405 285 425 325 425 360 C425 400 397 425 360 425 C323 425 295 400 295 360 C295 325 315 285 360 230 Z"/>
+  <path d="M150 470 Q360 530 570 470"/>
+  <path d="M150 470 C165 555 255 605 360 605 C465 605 555 555 570 470"/>
+  <path d="M280 645 L440 645"/>
+</svg>
