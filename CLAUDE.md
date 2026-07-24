@@ -32,3 +32,13 @@ Sanskrit is public domain; English translation (Shri Purohit Swami) is public do
 ## Product guardrail
 
 README gates the v1.1 backlog (per-verse OG images, regional languages, self-hosted fonts, Instagram 4:5 card) behind traction: 50 organic card shares/week. Don't build those unprompted.
+
+## Status file
+This repo has a STATUS.md at the root. Update it before every commit:
+- Set `updated:` to today's date.
+- Rewrite `## Now` if this change moved where the project stands.
+- Remove any `## Next` item this commit finishes, add whatever comes after it,
+  keep the list at three.
+- Add or clear `## Blocked` items.
+Keep the frontmatter and the heading names exactly as they are. A parser reads
+them.
