@@ -1,23 +1,31 @@
 #!/usr/bin/env node
-/* Build data/verse-index.json — a small, English-only index of data/verses.json
-   for the Sveltia CMS verse picker. Zero dependencies. Node 18+.
+/* Build content/verses/ — one small JSON per verse, for the Sveltia CMS verse
+   picker. Zero dependencies. Node 18+.
 
-   Why this file exists: Sveltia fetches repo contents through GitHub's GraphQL
-   API (`... on Blob { text }`), which truncates any blob over 512,000 bytes.
-   data/verses.json is ~732 KB — the Devanagari costs 3 bytes per character —
-   so the CMS receives it cut off mid-string and fails to parse it. This index
-   carries only what the picker needs to display and search, which keeps it an
-   order of magnitude under that limit.
+   Why these files exist: the CMS needs something to point a relation widget at,
+   and it cannot read data/verses.json directly — Sveltia fetches repo contents
+   through GitHub's GraphQL API (`... on Blob { text }`), which truncates blobs
+   over 512,000 bytes, and verses.json is ~732 KB because Devanagari costs 3
+   bytes per character. A relation against a folder collection (one entry per
+   verse, flat field names) is also far better-trodden ground in Sveltia than a
+   nested list inside a single file.
 
-   Regenerate with `node tools/build-verse-index.js` whenever data/verses.json
-   changes, and commit the result — the CMS reads GitHub, not dist/. */
+   Each file is content/verses/{c}-{v}.json:
+     { "id": "2-47", "ref": "2.47", "en": "<English meaning, ~120 chars>" }
+
+   The id matches the /verse/{c}-{v}/ slug build.js already generates, so a
+   theme's verseIds join back with:
+     verses.find((v) => `${v.c}-${v.v}` === id)
+
+   These files ARE committed — the CMS reads GitHub, not dist/. Regenerate with
+   `node tools/build-verse-index.js` whenever data/verses.json changes. */
 
 const fs = require('fs');
 const path = require('path');
 
 const ROOT = path.join(__dirname, '..');
 const SRC = path.join(ROOT, 'data/verses.json');
-const OUT = path.join(ROOT, 'data/verse-index.json');
+const OUT_DIR = path.join(ROOT, 'content/verses');
 
 /* Keep option labels short enough to stay readable in the picker dropdown. */
 const EN_MAX = 120;
@@ -33,21 +41,33 @@ const truncate = (s, max) => {
 
 const verses = JSON.parse(fs.readFileSync(SRC, 'utf8'));
 
-/* Root is an object with a named list, not a bare array, so the CMS file
-   collection can declare fields on it. */
-const index = {
-  verses: verses.map((v) => ({
-    id: v.id,
-    ref: `${v.c}.${v.v}`,
-    en: truncate(v.en, EN_MAX),
-  })),
-};
+fs.mkdirSync(OUT_DIR, { recursive: true });
 
-fs.writeFileSync(OUT, `${JSON.stringify(index, null, 2)}\n`);
+const written = new Set();
+let bytes = 0;
 
-const bytes = fs.statSync(OUT).size;
-const limit = 512000;
+for (const v of verses) {
+  const id = `${v.c}-${v.v}`;
+  const file = `${id}.json`;
+  const body = `${JSON.stringify({ id, ref: `${v.c}.${v.v}`, en: truncate(v.en, EN_MAX) }, null, 2)}\n`;
+
+  fs.writeFileSync(path.join(OUT_DIR, file), body);
+  written.add(file);
+  bytes += Buffer.byteLength(body, 'utf8');
+}
+
+/* drop files for verses that no longer exist, so a shrinking verses.json
+   doesn't leave orphans behind for the picker to offer */
+let removed = 0;
+for (const f of fs.readdirSync(OUT_DIR)) {
+  if (f.endsWith('.json') && !written.has(f)) {
+    fs.unlinkSync(path.join(OUT_DIR, f));
+    removed += 1;
+  }
+}
+
 console.log(
-  `Wrote ${index.verses.length} verses → data/verse-index.json ` +
-    `(${bytes.toLocaleString()} bytes, ${((bytes / limit) * 100).toFixed(1)}% of GitHub's ${limit.toLocaleString()}-byte blob limit)`
+  `Wrote ${written.size} verse files → content/verses/ ` +
+    `(${bytes.toLocaleString()} bytes total, ~${Math.round(bytes / written.size)} bytes each)` +
+    (removed ? `; removed ${removed} stale file(s)` : '')
 );
