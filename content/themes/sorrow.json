@@ -1,12 +1,16 @@
 {
-  "id": "sorrow",
-  "label_en": "Sorrow",
-  "label_hi": "दुख",
+  "id": "Affection",
+  "label_en": "affection",
+  "label_hi": "मोह माया",
   "type": "term",
-  "blurb": "sorrow",
-  "explanation": "sorrow Explanation",
+  "blurb": "सब मोह माया है",
+  "explanation": "Lord Shree Krishna told arjuna about affection and attraction",
   "verseIds": [
-    "18-27"
+    "2-11",
+    "2-12",
+    "2-13",
+    "2-14",
+    "2-15"
   ],
   "published": false
 }
