@@ -54,7 +54,10 @@ collections:
     extension: json
     format: json
     identifier_field: id
-    summary: '{{fields.label.en}} — {{id}}'
+    # List-view line: label, cloud, and whether a banner was uploaded. `ternary`
+    # is a Netlify-CMS template transformation Sveltia supports; it reads the
+    # value's truthiness, so a missing image field and an empty one both say No.
+    summary: '{{fields.label.en}} — {{fields.type}} — Image: {{fields.image | ternary(''Yes'', ''No'')}}'
     # Theme banner uploads live in their own namespace, not /themes/ — that URL
     # path is the themes index page build.js writes to dist/themes/index.html.
     # Leading slash = repo root, otherwise Sveltia resolves it next to the entry.
