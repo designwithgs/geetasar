@@ -22,30 +22,28 @@ collections:
   # Reference target for the relation field below. Never authored here — it is
   # hidden from the sidebar, but still loaded so the verse picker can use it.
   # Flip `hide` to false temporarily if you need to eyeball what the CMS parsed.
+  #
+  # Points at data/verse-index.json, NOT data/verses.json. Sveltia reads repo
+  # contents through GitHub's GraphQL API, which truncates blobs over 512,000
+  # bytes; verses.json is ~732 KB (Devanagari costs 3 bytes/char) and arrives
+  # cut off mid-string. The index is English-only and ~128 KB.
+  # Regenerate it with `node tools/build-verse-index.js` after editing verses.json.
   - name: verses
     label: Verses (reference)
     hide: true
     files:
       - name: verses
         label: All 701 verses
-        file: data/verses.json
+        file: data/verse-index.json
         format: json
         fields:
-          # verses.json is a bare top-level array. `root: true` on a single list
-          # field is what maps that array onto a named field, which in turn gives
-          # the relation widget the `verses.*.<sub>` paths it needs.
           - name: verses
             label: Verses
             widget: list
-            root: true
             fields:
               - { name: id, label: ID, widget: number }
-              - { name: c, label: Chapter, widget: number }
-              - { name: v, label: Verse, widget: number }
-              - { name: sa, label: Sanskrit, widget: text }
-              - { name: tr, label: Transliteration, widget: text }
-              - { name: hi, label: Hindi meaning, widget: text }
-              - { name: en, label: English meaning, widget: text }
+              - { name: ref, label: Reference, widget: string }
+              - { name: en, label: English meaning, widget: string }
 
   - name: themes
     label: Themes
@@ -71,19 +69,22 @@ collections:
           - { label: Question, value: question }
       - { name: blurb, label: Blurb, widget: text, required: false }
       - { name: explanation, label: Explanation, widget: markdown, required: false }
-      # The picker shows "Gita 2.47 — You have a right to your actions…" per verse,
-      # and searches the id, the chapter.verse reference, and both meanings.
-      # `verses.*.x` expands against the flattened keys verses.0.x, verses.1.x, …
-      # so each of the 701 array items becomes its own option.
+      # The picker shows "Gita 2.47 — But you have only the right to work…" per
+      # verse and searches both the reference and the English meaning, so "2.47"
+      # and "sorrow" both find something. `verses.*.x` expands against the
+      # flattened keys verses.0.x, verses.1.x, … so each of the 701 items in
+      # verse-index.json becomes its own option. Stores the bare verse id.
+      # Optional, so a theme can be drafted before its verses are curated.
       - name: verseIds
         label: Verses
         widget: relation
         multiple: true
+        required: false
         collection: verses
         file: verses
         value_field: verses.*.id
         display_fields:
-          - 'Gita {{verses.*.c}}.{{verses.*.v}} — {{verses.*.en}}'
+          - 'Gita {{verses.*.ref}} — {{verses.*.en}}'
         search_fields:
-          - '{{verses.*.id}} {{verses.*.c}}.{{verses.*.v}} {{verses.*.en}} {{verses.*.hi}}'
+          - '{{verses.*.ref}} {{verses.*.en}}'
       - { name: published, label: Published, widget: boolean, default: false }
