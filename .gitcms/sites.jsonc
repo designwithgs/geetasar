@@ -1,0 +1,11 @@
+{
+  "version": 1,
+  "sites": [
+    {
+      "key": "geetasar",
+      "display_name": "Site",
+      "website_url": "https://geetasar.com/",
+      "root_path": ""
+    }
+  ]
+}
