@@ -368,3 +368,102 @@ html.js .reveal.in{opacity:1;transform:none}
 
 /* footer fine print */
 .foot .fine{font-size:12.5px}
+
+/* ---------- themes: /themes/ index ---------- */
+.theme-group{margin:0 0 40px}
+.tg-h{
+  font-family:var(--en-font);font-size:12px;font-weight:600;
+  letter-spacing:.3em;text-transform:uppercase;color:var(--gold);
+  margin:0 0 14px;
+}
+.theme-list{list-style:none;margin:0;padding:0;display:grid;gap:8px}
+.theme-list a{
+  display:flex;align-items:baseline;flex-wrap:wrap;gap:10px;
+  padding:14px 16px;min-height:44px;
+  border:1px solid var(--hairline);border-radius:10px;
+  color:var(--ivory-dim);text-decoration:none;
+  transition:color .16s,border-color .16s,background-color .16s,transform .16s var(--ease-out);
+}
+.theme-list a:hover{color:var(--gold-bright);border-color:var(--gold);background:var(--gold-soft);transform:translateY(-2px)}
+.theme-list a:active{transform:none}
+.tl-en{font-size:17px;color:var(--ivory)}
+.theme-list a:hover .tl-en{color:var(--gold-bright)}
+.tl-hi{font-family:var(--sa-font);font-size:16px;color:var(--ivory-faint)}
+.tl-n{margin-left:auto;font-family:var(--en-font);font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--ivory-faint)}
+.theme-empty{color:var(--ivory-faint);text-align:center}
+
+/* ---------- themes: /theme/{slug}/ page ---------- */
+/* Hindi label sits under the English one inside the same h1. */
+.theme-hi{
+  display:block;font-family:var(--sa-font);font-size:.62em;
+  color:var(--gold);margin-top:10px;
+}
+.theme-banner{
+  margin:0 auto 26px;max-width:600px;border-radius:14px;overflow:hidden;
+  box-shadow:0 12px 32px -10px rgba(5,8,22,.7),0 0 0 1px var(--gold-line);
+}
+.theme-banner img{display:block;width:100%;height:auto}
+.theme-blurb{
+  max-width:600px;margin:0 auto;text-align:center;
+  font-size:17px;color:var(--ivory-dim);text-wrap:pretty;
+}
+.theme-intro{
+  max-width:600px;margin:0 auto;
+  font-size:17px;line-height:1.85;color:var(--ivory-dim);text-wrap:pretty;
+}
+.theme-intro p{margin:0 0 16px}
+
+/* verse list: a reading column, so left-aligned unlike the centred verse page */
+.theme-verses{max-width:600px;margin:34px auto 0}
+.theme-verse{padding:30px 0;border-top:1px solid var(--hairline)}
+.theme-verse:first-child{border-top:0;padding-top:6px}
+.theme-verse .sa{
+  font-family:var(--sa-font);font-weight:400;font-size:clamp(19px,4.6vw,23px);
+  line-height:1.9;color:var(--ivory);margin:0 0 16px;text-wrap:pretty;
+}
+.tv-ref{
+  font-family:var(--en-font);font-size:12px;font-weight:600;
+  letter-spacing:.2em;text-transform:uppercase;color:var(--gold);
+  margin:0 0 12px;
+}
+.theme-verse .meaning{font-size:16.5px}
+.tv-actions{margin:20px 0 0}
+.tv-link{font-size:15px;padding:9px 16px;min-height:40px}
+
+/* ---------- themes: rendered explanation (markdown from the CMS) ---------- */
+.theme-essay{max-width:600px;margin:0 auto;font-size:17px;line-height:1.85;color:var(--ivory-dim)}
+.theme-essay p{margin:0 0 18px;text-wrap:pretty}
+.theme-essay h2,.theme-essay h3,.theme-essay h4,.theme-essay h5,.theme-essay h6{
+  font-family:var(--sa-font);font-weight:400;color:var(--ivory);
+  margin:34px 0 12px;line-height:1.5;
+}
+.theme-essay h2{font-size:23px}
+.theme-essay h3{font-size:20px}
+.theme-essay h4,.theme-essay h5,.theme-essay h6{font-size:18px;color:var(--gold)}
+.theme-essay ul{margin:0 0 18px;padding-left:22px}
+.theme-essay li{margin:0 0 8px}
+.theme-essay code{
+  font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:.88em;
+  background:rgba(239,233,218,.06);border-radius:5px;padding:2px 6px;
+}
+.theme-essay blockquote{
+  margin:22px 0;padding:2px 0 2px 18px;
+  border-left:1px solid var(--gold-line);color:var(--ivory-faint);font-style:italic;
+}
+.theme-essay img,.theme-essay video{display:block;max-width:100%;height:auto;border-radius:10px;margin:22px auto}
+.theme-essay iframe{display:block;width:100%;max-width:100%;aspect-ratio:16/9;height:auto;border:0;border-radius:10px;margin:22px auto}
+
+/* ---------- header with a third nav item ----------
+   "Themes" pushes the single-row header past narrow phone widths, so stack it
+   below 520px and let it wrap above that. Overrides the theme block's .top
+   rather than editing it. */
+.top{flex-wrap:wrap;row-gap:6px}
+@media (max-width:520px){
+  .top{flex-direction:column;gap:8px;padding:14px 12px}
+  .top nav{gap:2px}
+  .top nav a{font-size:14px;padding:8px 10px}
+}
+/* the shared .tr-toggle summary carries 10px of padding for its hover pill;
+   zero the left edge here so it lines up with the shloka above it */
+.theme-verse .tr-toggle{margin-bottom:20px}
+.theme-verse .tr-toggle summary{padding-left:0}
