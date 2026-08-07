@@ -4,6 +4,9 @@
 # All paths below are relative to the REPO ROOT (build.js and data/ live there).
 # static/ is copied verbatim into dist/ by build.js, so this file is served at
 # geetasar.com/admin/config.yml with no build change.
+#
+# The theme schema here and lib/themes.js must agree. docs/theme-prd.md is the
+# source of truth for both; tools/validate-themes.js enforces it at build time.
 
 backend:
   name: github
@@ -51,19 +54,42 @@ collections:
     extension: json
     format: json
     identifier_field: id
-    summary: '{{label_en}} — {{id}}'
+    summary: '{{fields.label.en}} — {{id}}'
     # Theme banner uploads live in their own namespace, not /themes/ — that URL
     # path is the themes index page build.js writes to dist/themes/index.html.
     # Leading slash = repo root, otherwise Sveltia resolves it next to the entry.
     media_folder: /static/theme-images
     public_folder: /theme-images
     fields:
+      # THE SLUG IS PERMANENT. This id becomes /theme/{id}/, which is public and
+      # indexable the moment it deploys, and this site has no redirect layer to
+      # rescue a renamed one. The pattern below is the canonical slug rule copied
+      # verbatim from SLUG_PATTERN in lib/slug.js — the same rule build.js
+      # applies. Keep the two byte-identical: tools/validate-themes.js compares
+      # them and warns when they drift, because a CMS that accepts what the build
+      # rewrites is how "Affection" quietly became /theme/affection/.
       - name: id
-        label: ID (slug)
+        label: ID (slug) — permanent URL
         widget: string
-        hint: lowercase-with-hyphens — becomes the filename, e.g. content/themes/karma-yoga.json
-      - { name: label_en, label: Label (English), widget: string }
-      - { name: label_hi, label: Label (Hindi), widget: string, required: false }
+        pattern:
+          - '^(?=.{1,60}$)(?!\d+$)[a-z0-9]+(?:-[a-z0-9]+)*$'
+          - 'Lowercase letters, digits and single hyphens only — no capitals, spaces, punctuation or Devanagari; not all digits; 60 characters max. This becomes the permanent URL /theme/{id}/.'
+        hint: lowercase-with-hyphens, e.g. karma-yoga → geetasar.com/theme/karma-yoga/ and content/themes/karma-yoga.json. Choose carefully; it cannot be changed after publishing.
+
+      # Language-bearing fields are nested objects, never suffixed siblings
+      # (label_en / label_hi). Adding Tamil later = one more subfield here and
+      # one more entry in LANGS in lib/themes.js — no new fields on any theme
+      # file and no change to build.js. Only English is required: every other
+      # language falls back to English at build time, so a section is never
+      # rendered empty.
+      - name: label
+        label: Label
+        widget: object
+        collapsed: false
+        fields:
+          - { name: en, label: English, widget: string }
+          - { name: hi, label: हिन्दी, widget: string, required: false }
+
       - name: type
         label: Cloud
         widget: select
@@ -71,25 +97,51 @@ collections:
           - { label: Term, value: term }
           - { label: Modern, value: modern }
           - { label: Question, value: question }
+        hint: Term = Gita vocabulary (karma, dharma). Modern = a life situation (burnout, comparison). Question = something a person would actually type.
+
       # Three text fields, three jobs — build.js places each one differently.
       # blurb: one line. Becomes the page's meta description and the hover text
       #   on the /themes/ index. Keep it under ~155 characters.
       # intro: short framing paragraph, rendered ABOVE the verse list.
       # explanation: the long-form essay, rendered LAST, below the verses.
-      #   Markdown; may carry links and embeds.
-      - { name: blurb, label: Blurb, widget: text, required: false }
+      #   Markdown; may carry links and embeds. Under 200 characters the
+      #   validator warns that the page is too thin to justify existing.
+      - name: blurb
+        label: Blurb
+        widget: object
+        required: false
+        collapsed: false
+        fields:
+          - { name: en, label: English, widget: text, required: false }
+          - { name: hi, label: हिन्दी, widget: text, required: false }
+
       - name: intro
         label: Intro
-        widget: text
+        widget: object
         required: false
-        hint: Short framing paragraph, shown above the verses.
+        collapsed: false
+        hint: Short framing paragraph, shown above the verses. Required to publish.
+        fields:
+          - { name: en, label: English, widget: text, required: false }
+          - { name: hi, label: हिन्दी, widget: text, required: false }
+
       - name: image
         label: Banner image
         widget: image
         required: false
         hint: Optional banner shown under the title. Uploads to static/theme-images/.
       - { name: image_alt, label: Banner alt text, widget: string, required: false }
-      - { name: explanation, label: Explanation, widget: markdown, required: false }
+
+      - name: explanation
+        label: Explanation (essay)
+        widget: object
+        required: false
+        collapsed: false
+        hint: The long-form essay below the verses. Aim well past 200 characters — it is what makes the page worth indexing.
+        fields:
+          - { name: en, label: English, widget: markdown, required: false }
+          - { name: hi, label: हिन्दी, widget: markdown, required: false }
+
       # Plain field names, no templates and no list wildcards — one option per
       # entry in the `verses` folder collection above. The option label is the
       # reference and the English snippet joined ("2.47 But you have only the
@@ -97,6 +149,9 @@ collections:
       # find something. Stores the bare id ("2-47"), which is the same slug
       # build.js uses for /verse/{c}-{v}/.
       # Optional, so a theme can be drafted before its verses are curated.
+      # Publishing needs at least 3; over 15 the validator warns.
+      # Search finds where a WORD appears, not where an IDEA is taught — read
+      # each verse in full before adding it. See docs/theme-prd.md.
       - name: verseIds
         label: Verses
         widget: relation
@@ -110,4 +165,8 @@ collections:
         search_fields:
           - ref
           - en
+
+      # Default false, and deliberately the last field on the form: publishing
+      # is an act, not an oversight. The validator blocks publishing without a
+      # label, an intro and 3+ verses.
       - { name: published, label: Published, widget: boolean, default: false }

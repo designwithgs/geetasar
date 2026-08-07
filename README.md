@@ -9,10 +9,14 @@ site/
   build.js          # zero-dependency Node build script
   data/verses.json  # 701 verses: sanskrit, transliteration, hindi, english
   data/chapters.json
+  content/themes/   # curated theme pages, authored in the CMS at /admin/
+  content/verses/   # generated verse index the CMS verse picker reads
+  lib/              # shared Node modules (slug rule, theme schema)
   src/style.css     # site styles
   src/card.js       # canvas card renderer + Web Share
-  static/           # favicon, og.png
-  dist/             # generated output (704 pages + 701 verse JSONs)
+  tools/            # standalone scripts (theme validator, index builders)
+  static/           # favicon, og.png, /admin/ CMS
+  dist/             # generated output (~706 pages + 701 verse JSONs)
 ```
 
 ## Build
@@ -22,6 +26,25 @@ node build.js
 ```
 
 Output goes to `dist/`. No npm install needed. Node 18+.
+
+The build validates `content/themes/` first and **exits without writing anything** if a theme
+is broken — a duplicate slug, a verse id that doesn't exist, a published theme with no label.
+Run that check on its own with `node tools/validate-themes.js`.
+
+## Themes and the CMS
+
+Beyond the daily card, the site has a thematic layer: curated collections of verses on one
+idea, at `/theme/{slug}/`, listed at `/themes/`. Each is a JSON file in `content/themes/`,
+authored through [Sveltia CMS](https://github.com/sveltia/sveltia-cms) at
+[geetasar.com/admin/](https://geetasar.com/admin/) — no build step, no backend; saving commits
+to `main` and Cloudflare rebuilds.
+
+Theme URLs are permanent and there is no redirect layer, so slugs are validated in two places
+(the CMS field and the build) from one shared rule in `lib/slug.js`.
+
+**Read [`docs/theme-prd.md`](docs/theme-prd.md) before authoring or changing a theme** — it
+carries the field schema, the slug rules and the editorial standard for what is publishable.
+[`docs/content-log.md`](docs/content-log.md) tracks which themes exist and what state they're in.
 
 ## Deploy (Cloudflare Pages, free)
 
