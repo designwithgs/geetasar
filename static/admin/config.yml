@@ -1,0 +1,89 @@
+# yaml-language-server: $schema=https://unpkg.com/@sveltia/cms/schema/sveltia-cms.json
+#
+# Sveltia CMS config. Loaded automatically from the same folder as index.html.
+# All paths below are relative to the REPO ROOT (build.js and data/ live there).
+# static/ is copied verbatim into dist/ by build.js, so this file is served at
+# geetasar.com/admin/config.yml with no build change.
+
+backend:
+  name: github
+  repo: designwithgs/geetasar
+  branch: main
+  # PAT only: the default OAuth flow needs an auth proxy this site doesn't have.
+  # Drop this line to re-enable "Sign in with GitHub" once one exists.
+  auth_methods: [token]
+
+# Required by Sveltia even when unused. Nothing is created until something is
+# uploaded; static/ maps to the site root, so /uploads is the public path.
+media_folder: static/uploads
+public_folder: /uploads
+
+collections:
+  # Reference target for the relation field below. Never authored here — it is
+  # hidden from the sidebar, but still loaded so the verse picker can use it.
+  # Flip `hide` to false temporarily if you need to eyeball what the CMS parsed.
+  - name: verses
+    label: Verses (reference)
+    hide: true
+    files:
+      - name: verses
+        label: All 701 verses
+        file: data/verses.json
+        format: json
+        fields:
+          # verses.json is a bare top-level array. `root: true` on a single list
+          # field is what maps that array onto a named field, which in turn gives
+          # the relation widget the `verses.*.<sub>` paths it needs.
+          - name: verses
+            label: Verses
+            widget: list
+            root: true
+            fields:
+              - { name: id, label: ID, widget: number }
+              - { name: c, label: Chapter, widget: number }
+              - { name: v, label: Verse, widget: number }
+              - { name: sa, label: Sanskrit, widget: text }
+              - { name: tr, label: Transliteration, widget: text }
+              - { name: hi, label: Hindi meaning, widget: text }
+              - { name: en, label: English meaning, widget: text }
+
+  - name: themes
+    label: Themes
+    folder: content/themes
+    create: true
+    extension: json
+    format: json
+    identifier_field: id
+    summary: '{{label_en}} — {{id}}'
+    fields:
+      - name: id
+        label: ID (slug)
+        widget: string
+        hint: lowercase-with-hyphens — becomes the filename, e.g. content/themes/karma-yoga.json
+      - { name: label_en, label: Label (English), widget: string }
+      - { name: label_hi, label: Label (Hindi), widget: string, required: false }
+      - name: type
+        label: Cloud
+        widget: select
+        options:
+          - { label: Term, value: term }
+          - { label: Modern, value: modern }
+          - { label: Question, value: question }
+      - { name: blurb, label: Blurb, widget: text, required: false }
+      - { name: explanation, label: Explanation, widget: markdown, required: false }
+      # The picker shows "Gita 2.47 — You have a right to your actions…" per verse,
+      # and searches the id, the chapter.verse reference, and both meanings.
+      # `verses.*.x` expands against the flattened keys verses.0.x, verses.1.x, …
+      # so each of the 701 array items becomes its own option.
+      - name: verseIds
+        label: Verses
+        widget: relation
+        multiple: true
+        collection: verses
+        file: verses
+        value_field: verses.*.id
+        display_fields:
+          - 'Gita {{verses.*.c}}.{{verses.*.v}} — {{verses.*.en}}'
+        search_fields:
+          - '{{verses.*.id}} {{verses.*.c}}.{{verses.*.v}} {{verses.*.en}} {{verses.*.hi}}'
+      - { name: published, label: Published, widget: boolean, default: false }

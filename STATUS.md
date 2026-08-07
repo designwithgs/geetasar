@@ -1,14 +1,14 @@
 ---
 name: GeetaSar
 stage: live
-updated: 2026-07-24
+updated: 2026-08-07
 ---
 
 ## Now
-Daily Bhagavad Gita shloka site live at geetasar.com (static, zero-backend, Cloudflare Pages) with shareable 1080×1080 cards. The `card-motifs` feature set — chapter-themed motifs behind the card, generic Share button, local dist preview — is merged into main, along with single-line-shloka danda-boundary wrapping. GA4 is enabled and firing `card-share` / `card-download` / `link-copy` events, so share traction is now measurable.
+Daily Bhagavad Gita shloka site live at geetasar.com (static, zero-backend, Cloudflare Pages) with shareable 1080×1080 cards. The `card-motifs` feature set — chapter-themed motifs behind the card, generic Share button, local dist preview — is merged into main, along with single-line-shloka danda-boundary wrapping. GA4 is enabled and firing `card-share` / `card-download` / `link-copy` events, so share traction is now measurable. Sveltia CMS now runs at `/admin/` (CDN script, no build step, no backend) for authoring THEME entries into `content/themes/` — the verse picker reads `data/verses.json` read-only. Nothing consumes those theme files yet.
 
 ## Next
-- [ ] Delete the merged, now-stale `card-motifs` branch (local + origin).
+- [ ] Author the first THEME entries at `/admin/` and check how the 701-verse picker holds up in a real browser.
 - [ ] Watch GA4 card-share data and measure organic card-shares/week against the 50-share gate.
 - [ ] Hold the v1.1 backlog until the 50-share/week gate is cleared.
 

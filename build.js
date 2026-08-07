@@ -302,7 +302,7 @@ fs.writeFileSync(path.join(DIST, '404.html'), shell({ title: 'Not found — Geet
 /* sitemap + robots */
 const urls = [`${SITE}/`, `${SITE}/gita/`, `${SITE}/about/`, ...verses.map((v) => `${SITE}/verse/${v.c}-${v.v}/`)];
 fs.writeFileSync(path.join(DIST, 'sitemap.xml'), `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${urls.map((u) => `<url><loc>${u}</loc></url>`).join('\n')}\n</urlset>`);
-fs.writeFileSync(path.join(DIST, 'robots.txt'), `User-agent: *\nAllow: /\nSitemap: ${SITE}/sitemap.xml`);
+fs.writeFileSync(path.join(DIST, 'robots.txt'), `User-agent: *\nAllow: /\nDisallow: /admin/\nSitemap: ${SITE}/sitemap.xml`);
 
 /* static assets */
 for (const f of ['style.css', 'card.js', 'reveal.js']) fs.copyFileSync(path.join(__dirname, 'src', f), path.join(DIST, f));
