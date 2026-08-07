@@ -1,0 +1,12 @@
+{
+  "id": "sorrow",
+  "label_en": "sorrow",
+  "label_hi": "दुख",
+  "type": "term",
+  "blurb": "sorrow",
+  "explanation": "sorrow Explanation",
+  "verseIds": [
+    "18-27"
+  ],
+  "published": true
+}
