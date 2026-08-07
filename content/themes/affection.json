@@ -1,0 +1,26 @@
+{
+  "id": "affection",
+  "label": {
+    "en": "affection",
+    "hi": "मोह माया"
+  },
+  "type": "term",
+  "blurb": {
+    "en": "सब मोह माया है"
+  },
+  "intro": {
+    "en": "Affection explain by Lord Krishna"
+  },
+  "image_alt": "",
+  "explanation": {
+    "en": "Lord Shree Krishna told arjuna about affection and attraction"
+  },
+  "verseIds": [
+    "2-11",
+    "2-12",
+    "2-13",
+    "2-14",
+    "2-15"
+  ],
+  "published": true
+}

@@ -4,12 +4,30 @@
 
 const fs = require('fs');
 const path = require('path');
+/* Local modules, not npm packages — the zero-dependency rule is intact.
+   src/ is browser code that gets COPIED into dist/; lib/ is Node code that gets
+   REQUIRED here and by tools/. Never require anything out of src/. */
+const { pick } = require('./lib/themes');
+const { validate, report } = require('./tools/validate-themes');
 
 const SITE = 'https://geetasar.com';
 const DIST = path.join(__dirname, 'dist');
 
 const verses = JSON.parse(fs.readFileSync(path.join(__dirname, 'data/verses.json'), 'utf8'));
 const chapters = JSON.parse(fs.readFileSync(path.join(__dirname, 'data/chapters.json'), 'utf8'));
+
+/* ---------- validate themes, before anything is written ----------
+   A theme page is a permanent public URL and this repo has no CI, so the gate
+   lives here: a duplicate slug, a dangling verseId or a malformed theme file
+   stops the build instead of shipping. Cloudflare Pages keeps the previous
+   deployment serving when a build fails, so the site stays up either way.
+   `themeReport.themes` carries the normalised, verse-resolved records the theme
+   section below renders — build and validator read the files exactly once,
+   through the same code, so they cannot disagree about what a theme means.
+   Warnings print and the build continues. See docs/theme-prd.md. */
+const themeReport = validate({ verses });
+report(themeReport);
+if (themeReport.failures.length) process.exit(1);
 
 const esc = (s) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 
@@ -305,24 +323,23 @@ fs.writeFileSync(path.join(DIST, '404.html'), shell({ title: 'Not found — Geet
    published theme at /theme/{slug}/ plus a plain grouped index at /themes/.
    A theme's verseIds are joined against data/verses.json and rendered in the
    curator's order — never re-sorted. Purely additive: no card canvas here,
-   each verse links out to its existing /verse/{c}-{v}/ page to be shared. */
+   each verse links out to its existing /verse/{c}-{v}/ page to be shared.
 
-const THEMES_DIR = path.join(__dirname, 'content/themes');
+   Reading, slugging and verse-resolution all happen in lib/themes.js, driven by
+   the validator at the top of this file. Nothing below parses a theme file or
+   builds a slug — those rules exist once, in lib/. docs/theme-prd.md is the
+   source of truth for the schema and the editorial standard. */
+
 const THEME_GROUPS = [
   { key: 'term', label: 'Terms', eyebrow: 'Term' },
   { key: 'modern', label: 'Modern life', eyebrow: 'Modern' },
   { key: 'question', label: 'Questions', eyebrow: 'Question' },
+  /* the validator FAILs on an unknown type, so this bucket should stay empty —
+     it exists so a future type can never render an undefined eyebrow */
   { key: 'other', label: 'Other', eyebrow: 'Theme' },
 ];
 
-const slugify = (s) => String(s || '').toLowerCase().trim().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
 const cap = (s) => (s ? s.charAt(0).toUpperCase() + s.slice(1) : s);
-
-let themeWarnings = 0;
-function themeWarn(msg) {
-  themeWarnings++;
-  console.warn(`\n  !!  ${msg}\n`);
-}
 
 /* ---------- minimal markdown, for theme explanations only ----------
    Headings, paragraphs, lists, bold, italic, inline code and links — the
@@ -375,43 +392,14 @@ function mdToHtml(md) {
 const textParas = (s, cls) => String(s || '').trim().split(/\n{2,}/).filter(Boolean)
   .map((p) => `<p${cls ? ` class="${cls}"` : ''}>${esc(p.trim()).replace(/\n/g, '<br>')}</p>`).join('\n');
 
-/* ---------- load + validate ---------- */
-const themes = [];
-const themeSlugs = new Set();
-const themeFiles = fs.existsSync(THEMES_DIR)
-  ? fs.readdirSync(THEMES_DIR).filter((f) => f.endsWith('.json')).sort()
-  : [];
-
-for (const file of themeFiles) {
-  let t;
-  try {
-    t = JSON.parse(fs.readFileSync(path.join(THEMES_DIR, file), 'utf8'));
-  } catch (e) {
-    themeWarn(`THEME ${file}: not valid JSON (${e.message}) — skipped`);
-    continue;
-  }
-  if (t.published !== true) continue;
-
-  const slug = slugify(t.id || path.basename(file, '.json'));
-  if (!slug) { themeWarn(`THEME ${file}: id ${JSON.stringify(t.id)} has no usable slug — skipped`); continue; }
-  if (themeSlugs.has(slug)) { themeWarn(`THEME ${file}: slug "${slug}" is already taken by another theme — skipped`); continue; }
-  themeSlugs.add(slug);
-
-  const list = [];
-  for (const id of t.verseIds || []) {
-    const v = verses.find((x) => `${x.c}-${x.v}` === id); // ids are the /verse/{c}-{v}/ slug
-    if (!v) { themeWarn(`THEME "${t.id}" (${file}): verseId "${id}" matches no verse in data/verses.json — dropped from the page`); continue; }
-    list.push(v);
-  }
-  if (!list.length) themeWarn(`THEME "${t.id}" (${file}): published with no resolvable verses — the page will be empty`);
-
-  let type = t.type;
-  if (!THEME_GROUPS.slice(0, 3).some((g) => g.key === type)) {
-    themeWarn(`THEME "${t.id}" (${file}): type ${JSON.stringify(t.type)} is not term/modern/question — filed under Other`);
-    type = 'other';
-  }
-  themes.push({ ...t, slug, type, list });
-}
+/* ---------- what gets a page ----------
+   Every record here is already normalised and verse-resolved: `slug` is
+   canonical, `list` holds the joined verses in the curator's order, and the
+   language fields are { en, hi } objects read through pick(). Drafts never
+   render — `published: false` is the default and publishing is deliberate. */
+const themes = themeReport.themes
+  .filter((t) => t.published)
+  .map((t) => ({ ...t, type: t.typeValid ? t.type : 'other' }));
 
 /* ---------- one page per theme ---------- */
 function themeVerse(v) {
@@ -436,31 +424,41 @@ function themeVerse(v) {
 </article>`;
 }
 
+/* Site chrome is English-only, so pages render the English text and pick()
+   falls back to English for any language a theme hasn't been translated into —
+   a section never renders empty. label.hi is the one deliberate exception: it's
+   a secondary Devanagari ornament beside the English title, so it appears only
+   when genuinely authored, never as the English label printed twice. */
+const themeLabel = (t) => pick(t.label, 'en') || t.slug;
+
 for (const t of themes) {
   const group = THEME_GROUPS.find((g) => g.key === t.type);
-  const label = t.label_en || t.id;
+  const label = themeLabel(t);
+  const blurb = pick(t.blurb, 'en');
+  const intro = pick(t.intro, 'en');
+  const explanation = pick(t.explanation, 'en');
   const banner = t.image
-    ? `<figure class="theme-banner"><img src="${esc(t.image)}" alt="${esc(t.image_alt || '')}" loading="lazy"></figure>`
+    ? `<figure class="theme-banner"><img src="${esc(t.image)}" alt="${esc(t.imageAlt)}" loading="lazy"></figure>`
     : '';
   const body = `
 <main class="wrap">
   <p class="eyebrow">${group.eyebrow}</p>
-  <h1 class="page-h">${esc(label)}${t.label_hi ? `<span class="theme-hi" lang="hi">${esc(t.label_hi)}</span>` : ''}</h1>
+  <h1 class="page-h">${esc(label)}${t.label.hi ? `<span class="theme-hi" lang="hi">${esc(t.label.hi)}</span>` : ''}</h1>
   ${banner}
-  ${t.blurb ? textParas(t.blurb, 'theme-blurb') : ''}
+  ${blurb ? textParas(blurb, 'theme-blurb') : ''}
   <div class="ornament"></div>
-  ${t.intro ? `<section class="theme-intro reveal">${textParas(t.intro)}</section>` : ''}
+  ${intro ? `<section class="theme-intro reveal">${textParas(intro)}</section>` : ''}
   <section class="theme-verses reveal">
     ${t.list.length ? t.list.map(themeVerse).join('\n    ') : '<p class="theme-empty">Verses for this theme are being curated.</p>'}
   </section>
-  ${t.explanation ? `<div class="ornament"></div>\n  <section class="theme-essay reveal">${mdToHtml(t.explanation)}</section>` : ''}
+  ${explanation ? `<div class="ornament"></div>\n  <section class="theme-essay reveal">${mdToHtml(explanation)}</section>` : ''}
   <nav class="pager">
     <a href="/themes/">← All themes</a>
     <a href="/gita/" class="mid">All Chapters</a>
     <span></span>
   </nav>
 </main>`;
-  const desc = (t.blurb || t.intro || `${t.list.length} Bhagavad Gita shlokas on ${label}, with Sanskrit, Hindi and English meaning.`)
+  const desc = (blurb || intro || `${t.list.length} Bhagavad Gita shlokas on ${label}, with Sanskrit, Hindi and English meaning.`)
     .replace(/\s+/g, ' ').trim().slice(0, 155);
   const dir = path.join(DIST, 'theme', t.slug);
   fs.mkdirSync(dir, { recursive: true });
@@ -478,14 +476,14 @@ for (const t of themes) {
 /* ---------- /themes/ — plain list, grouped by type (no cloud UI yet) ---------- */
 const themeGroupsHtml = THEME_GROUPS
   .map((g) => {
-    const items = themes.filter((t) => t.type === g.key).sort((a, b) => String(a.label_en || a.id).localeCompare(String(b.label_en || b.id)));
+    const items = themes.filter((t) => t.type === g.key).sort((a, b) => themeLabel(a).localeCompare(themeLabel(b)));
     if (!items.length) return '';
     return `<section class="theme-group">
   <h2 class="tg-h">${g.label}</h2>
   <ul class="theme-list">
-    ${items.map((t) => `<li><a href="/theme/${t.slug}/"${t.blurb ? ` title="${esc(String(t.blurb).replace(/\s+/g, ' ').trim())}"` : ''}>
-      <span class="tl-en">${esc(t.label_en || t.id)}</span>
-      ${t.label_hi ? `<span class="tl-hi" lang="hi">${esc(t.label_hi)}</span>` : ''}
+    ${items.map((t) => `<li><a href="/theme/${t.slug}/"${pick(t.blurb, 'en') ? ` title="${esc(pick(t.blurb, 'en').replace(/\s+/g, ' ').trim())}"` : ''}>
+      <span class="tl-en">${esc(themeLabel(t))}</span>
+      ${t.label.hi ? `<span class="tl-hi" lang="hi">${esc(t.label.hi)}</span>` : ''}
       <span class="tl-n">${t.list.length} shloka${t.list.length === 1 ? '' : 's'}</span>
     </a></li>`).join('\n    ')}
   </ul>
@@ -523,5 +521,5 @@ fs.writeFileSync(path.join(DIST, 'robots.txt'), `User-agent: *\nAllow: /\nDisall
 for (const f of ['style.css', 'card.js', 'reveal.js']) fs.copyFileSync(path.join(__dirname, 'src', f), path.join(DIST, f));
 fs.cpSync(path.join(__dirname, 'static'), DIST, { recursive: true });
 
+/* theme diagnostics already printed by report() at the top of the build */
 console.log(`Built ${urls.length} pages → dist/ (${themes.length} theme page${themes.length === 1 ? '' : 's'})`);
-if (themeWarnings) console.warn(`\n  !!  ${themeWarnings} theme warning${themeWarnings === 1 ? '' : 's'} above — themes built anyway, but check content/themes/.\n`);
