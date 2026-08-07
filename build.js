@@ -1,20 +1,35 @@
 #!/usr/bin/env node
 /* GeetaSar — static site builder. Zero dependencies. Node 18+.
-   Reads data/verses.json → writes dist/ (index, 700+ verse pages, per-verse JSON, sitemap). */
+   Reads content/verses/ and content/themes/ → writes dist/ (index, 700+ verse
+   pages, per-verse JSON, the assembled dist/verses.json, sitemap). */
 
 const fs = require('fs');
 const path = require('path');
 /* Local modules, not npm packages — the zero-dependency rule is intact.
    src/ is browser code that gets COPIED into dist/; lib/ is Node code that gets
    REQUIRED here and by tools/. Never require anything out of src/. */
+const { hinglish } = require('./lib/hinglish');
 const { pick } = require('./lib/themes');
+const { validate: validateVerses, report: reportVerses } = require('./tools/validate-verses');
 const { validate, report } = require('./tools/validate-themes');
 
 const SITE = 'https://geetasar.com';
 const DIST = path.join(__dirname, 'dist');
 
-const verses = JSON.parse(fs.readFileSync(path.join(__dirname, 'data/verses.json'), 'utf8'));
 const chapters = JSON.parse(fs.readFileSync(path.join(__dirname, 'data/chapters.json'), 'utf8'));
+
+/* ---------- validate and assemble the verses, before anything is written ----------
+   content/verses/ IS the verse data — 701 files, one per verse, editable at
+   /admin/, where Save is a commit to main and a commit to main is a deploy.
+   This gate runs first because everything below reads `verses`, and because
+   the array's ORDER is the daily-verse sequence: assembleVerses() in
+   lib/verses.js sorts numerically by chapter then verse and derives each
+   verse's numeric id from its position. Read the note at the top of
+   lib/verses.js before touching any of that. */
+const verseReport = validateVerses();
+reportVerses(verseReport);
+if (verseReport.failures.length) process.exit(1);
+const verses = verseReport.verses;
 
 /* ---------- validate themes, before anything is written ----------
    A theme page is a permanent public URL and this repo has no CI, so the gate
@@ -31,62 +46,6 @@ if (themeReport.failures.length) process.exit(1);
 
 const esc = (s) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 
-/* ---------- Devanagari → Hinglish (casual Roman, card-only) ----------
-   Heuristic transliteration with schwa deletion: final inherent 'a' is
-   dropped, medial 'a' is dropped between voweled syllables (kahkar, karne),
-   and word-final long vowels are shortened (tera, hi, nahin). */
-const HN_C = { क:'k',ख:'kh',ग:'g',घ:'gh',ङ:'n',च:'ch',छ:'chh',ज:'j',झ:'jh',ञ:'n',ट:'t',ठ:'th',ड:'d',ढ:'dh',ण:'n',त:'t',थ:'th',द:'d',ध:'dh',न:'n',प:'p',फ:'ph',ब:'b',भ:'bh',म:'m',य:'y',र:'r',ल:'l',व:'v',श:'sh',ष:'sh',स:'s',ह:'h' };
-const HN_NUKTA = { क:'q',ख:'kh',ग:'g',ज:'z',ड:'d',ढ:'rh',फ:'f' };
-const HN_V = { अ:'a',आ:'aa',इ:'i',ई:'ee',उ:'u',ऊ:'oo',ऋ:'ri',ए:'e',ऐ:'ai',ओ:'o',औ:'au',ऍ:'e',ऑ:'o' };
-const HN_M = { 'ा':'aa','ि':'i','ी':'ee','ु':'u','ू':'oo','ृ':'ri','े':'e','ै':'ai','ो':'o','ौ':'au','ॉ':'o','ॅ':'e' };
-const HN_SHORT = { aa:'a', ee:'i', oo:'u' };
-const HN_WORDS = {
-  'में':'mein', 'कृष्ण':'krishna', 'श्रीभगवान्':'shri bhagvaan', 'श्रीभगवान':'shri bhagvaan',
-  'हमें':'hamein', 'उन्हें':'unhein', 'इन्हें':'inhein', 'तुम्हें':'tumhein',
-};
-const HN_LABIAL = 'पफबभम';
-
-function hnWord(word) {
-  if (HN_WORDS[word]) return HN_WORDS[word];
-  /* fused postpositions: split word-final में always, को after anusvara
-     (karmommen → karmon mein) — both are unambiguous in Hindi prose */
-  if (word.length > 3 && word.endsWith('में')) return hnWord(word.slice(0, -3)) + ' mein';
-  if (word.length > 3 && word.endsWith('ंको')) return hnWord(word.slice(0, -2)) + ' ko';
-  const units = []; // {c, v, coda} — v null means undecided inherent 'a'
-  const last = () => units[units.length - 1];
-  for (let i = 0; i < word.length; i++) {
-    const ch = word[i];
-    if (HN_C[ch]) {
-      let c = HN_C[ch];
-      if (ch === 'ज' && word[i + 1] === '्' && word[i + 2] === 'ञ') { c = 'gy'; i += 2; } // ज्ञ → gy
-      else if (word[i + 1] === '़') { c = HN_NUKTA[ch] || c; i++; }
-      units.push({ c, v: null, coda: '' });
-    } else if (HN_M[ch]) { if (units.length) last().v = HN_M[ch]; }
-    else if (ch === '्') { if (units.length) last().v = ''; }
-    else if (HN_V[ch]) units.push({ c: '', v: HN_V[ch], coda: '' });
-    else if (ch === 'ं' || ch === 'ँ') { if (units.length) last().coda += HN_LABIAL.includes(word[i + 1]) ? 'm' : 'n'; }
-    else if (ch === 'ः') { if (units.length) last().coda += 'h'; }
-    else if (ch !== 'ऽ') units.push({ c: ch, v: '', coda: '' }); // pass through unknowns
-  }
-  if (!units.length) return '';
-  if (units.length > 1 && last().v === null) last().v = ''; // word-final schwa
-  for (let i = 1; i < units.length - 1; i++) { // medial schwa, left to right
-    if (units[i].v !== null || units[i].coda) continue; // nasal coda keeps its vowel (ahankaar)
-    const prevV = units[i - 1].v === null ? 'a' : units[i - 1].v;
-    const nextV = units[i + 1].v === null ? 'a' : units[i + 1].v;
-    if (prevV && nextV) units[i].v = '';
-  }
-  for (const u of units) if (u.v === null) u.v = 'a';
-  if (last().v in HN_SHORT) last().v = HN_SHORT[last().v];
-  return units.map((u) => u.c + u.v + u.coda).join('');
-}
-
-const hinglish = (s) => s
-  .replace(/[।॥]+/g, '.')
-  .replace(/ॐ/g, 'Om')
-  .replace(/[०-९]/g, (d) => String(d.charCodeAt(0) - 0x0966))
-  .replace(/[ऀ-ॿ]+/g, hnWord);
-
 /* chapter → background motif on the shareable card (line-art SVGs in static/motifs/) */
 const MOTIF_BY_CHAPTER = {
   1: 'bow', 2: 'chakra', 3: 'flame', 4: 'flame', 5: 'lotus', 6: 'diya',
@@ -94,6 +53,15 @@ const MOTIF_BY_CHAPTER = {
   13: 'tree', 14: 'tree', 15: 'tree', 16: 'conch', 17: 'conch', 18: 'conch',
 };
 
+/* The verse set exactly as content/verses/ defines it, captured BEFORE the
+   build-time fields below are attached — the loop mutates in place, so a
+   snapshot taken after it would carry hn and motif. Written to dist/verses.json
+   so the whole corpus is inspectable as one file and diffable against a known
+   good copy. Nothing on the site fetches it: pages and /v/{id}.json are
+   rendered from this in-memory array. */
+const versesJson = JSON.stringify(verses);
+
+/* hn (Hinglish) is GENERATED from hi, never stored — see lib/hinglish.js. */
 for (const v of verses) {
   v.hn = hinglish(v.hi);
   v.motif = MOTIF_BY_CHAPTER[v.c];
@@ -210,6 +178,9 @@ function prevNext(v) {
 fs.rmSync(DIST, { recursive: true, force: true });
 fs.mkdirSync(path.join(DIST, 'v'), { recursive: true });
 
+/* the assembled verse set, one file (see the snapshot above) */
+fs.writeFileSync(path.join(DIST, 'verses.json'), versesJson);
+
 /* per-verse JSON (used by index to load today's verse) */
 for (const v of verses) {
   fs.writeFileSync(path.join(DIST, 'v', `${v.id}.json`), JSON.stringify(v));
@@ -321,7 +292,7 @@ fs.writeFileSync(path.join(DIST, '404.html'), shell({ title: 'Not found — Geet
 /* ---------- themes ----------
    content/themes/*.json (authored in the CMS at /admin/) → one page per
    published theme at /theme/{slug}/ plus a plain grouped index at /themes/.
-   A theme's verseIds are joined against data/verses.json and rendered in the
+   A theme's verseIds are joined against the assembled verses and rendered in the
    curator's order — never re-sorted. Purely additive: no card canvas here,
    each verse links out to its existing /verse/{c}-{v}/ page to be shared.
 

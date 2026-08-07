@@ -26,11 +26,11 @@
 const fs = require('fs');
 const path = require('path');
 const { readThemeDir, normaliseTheme, buildVerseIndex, resolveVerses, pick, has, THEME_TYPES } = require('../lib/themes');
+const { validate: validateVerses } = require('./validate-verses');
 const { SLUG_PATTERN } = require('../lib/slug');
 
 const ROOT = path.join(__dirname, '..');
 const THEMES_DIR = path.join(ROOT, 'content/themes');
-const VERSES_JSON = path.join(ROOT, 'data/verses.json');
 const CONFIG_YML = path.join(ROOT, 'static/admin/config.yml');
 /* static/ is copied to the site root, so a banner at public path /theme-images/x.jpg
    lives on disk at static/theme-images/x.jpg. NOT static/themes/ — that path would
@@ -44,8 +44,12 @@ const MIN_VERSES = 3;        // fewer than this isn't a sequence, it's a quote
 const MAX_VERSES = 15;       // beyond this the page stops being readable
 const MAX_THEMES_PER_VERSE = 4; // a verse in everything means nothing anywhere
 
+/* `verses` is passed in by build.js, which has already validated and assembled
+   content/verses/. A standalone run has to do that itself — the verse set is
+   what verseIds are checked against, so there is nothing to validate without
+   it. Verse-level problems are that validator's to report, not this one's. */
 function validate({ verses, themesDir = THEMES_DIR } = {}) {
-  const all = verses || JSON.parse(fs.readFileSync(VERSES_JSON, 'utf8'));
+  const all = verses || validateVerses().verses;
   const verseIndex = buildVerseIndex(all);
 
   const issues = []; // { group, severity, message }
@@ -105,7 +109,7 @@ function validate({ verses, themesDir = THEMES_DIR } = {}) {
     /* ---- verses ---- */
     const { list, missing, duplicates } = resolveVerses(t.verseIds, verseIndex);
     t.list = list;
-    for (const id of missing) fail(group, `verseId "${id}" matches no verse in data/verses.json.`);
+    for (const id of missing) fail(group, `verseId "${id}" matches no verse in content/verses/ — there is no ${id}.json.`);
     for (const id of duplicates) fail(group, `verseId "${id}" is listed more than once in this theme.`);
     if (list.length > MAX_VERSES) {
       warn(group, `${list.length} verses — over ${MAX_VERSES}, the page stops being readable top to bottom. Split it.`);

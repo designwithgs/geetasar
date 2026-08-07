@@ -3,7 +3,9 @@
 **Feature:** Curated theme pages — `/theme/{slug}/` — the reason to come back between daily cards.
 **Status:** Shipped (v1), hardened. This doc is the source of truth for the theme schema, the slug rule and the editorial standard.
 **Surfaces:** The themes index (`/themes/`), one page per published theme (`/theme/{slug}/`), and the CMS at `/admin/`.
-**Code:** `lib/slug.js` (the slug rule), `lib/themes.js` (schema + fallback), `tools/validate-themes.js` (the gate), `build.js` (rendering), `static/admin/config.yml` (authoring).
+**Code:** `lib/slug.js` (the slug rule), `lib/themes.js` (schema + fallback), `lib/verses.js` (the
+verse set themes are joined against), `tools/validate-themes.js` (the gate), `build.js`
+(rendering), `static/admin/config.yml` (authoring).
 
 ---
 
@@ -206,9 +208,13 @@ generated "N Bhagavad Gita shlokas on {label}" line — truncated to 155 charact
 ### 8.1 Data flow
 
 ```
-content/themes/*.json ──┐
+content/verses/*.json ──▶ lib/verses.js  assembleVerses() ──▶ 701 verses, numerically ordered
+                                                    │
+                              tools/validate-verses.js ──FAIL──▶ exit 1, nothing written
+                                                    │ pass
+content/themes/*.json ──┐                           │
                         ├─▶ lib/themes.js  normaliseTheme() ──▶ { slug, label{}, …, verseIds }
-data/verses.json     ───┘                  resolveVerses()  ──▶ verses in curator order
+                        └─▶               resolveVerses()  ──▶ verses in curator order
                                                     │
                               tools/validate-themes.js ──FAIL──▶ exit 1, nothing written
                                                     │ pass
@@ -216,10 +222,16 @@ data/verses.json     ───┘                  resolveVerses()  ──▶ ve
                                               └─▶ dist/themes/index.html + sitemap.xml
 ```
 
-`build.js` calls `validate({ verses })` as its first step, **before `dist/` is removed**, and
-renders from `themeReport.themes` — the same normalised records the validator judged. Build and
-validator read every theme file exactly once, through the same code, so they cannot disagree
-about what a theme means.
+The verses come first because a theme's `verseIds` are resolved against them. `build.js` runs
+`validateVerses()` and then `validate({ verses })` as its first two steps, **before `dist/` is
+removed**, and renders from `themeReport.themes` — the same normalised records the validator
+judged. Build and validator read every theme file exactly once, through the same code, so they
+cannot disagree about what a theme means. A standalone `node tools/validate-themes.js` assembles
+the verses itself through the same module, so it behaves identically.
+
+**Verse order is load-bearing, and it is not this layer's to change.** `assembleVerses()` sorts
+numerically by chapter then verse, and that position becomes the verse's numeric id — the
+`/v/{id}.json` file the daily card fetches. See the note at the top of `lib/verses.js`.
 
 ### 8.2 Module boundaries
 
@@ -227,8 +239,9 @@ The repo has three kinds of code and they do not mix:
 
 - **`src/`** — browser code, **copied** into `dist/` (`style.css`, `card.js`, `reveal.js`).
   Never `require()` anything from here.
-- **`lib/`** — Node modules, **required** by `build.js` and `tools/`. Local files only; the
-  zero-dependency rule means no npm, not no modules.
+- **`lib/`** — Node modules, **required** by `build.js` and `tools/` (`slug.js`, `themes.js`,
+  `verses.js`, `hinglish.js`). Local files only; the zero-dependency rule means no npm, not no
+  modules.
 - **`tools/`** — runnable scripts, each standalone via `node tools/x.js`.
 
 ### 8.3 Markdown subset
@@ -262,7 +275,7 @@ site stays up, it just does not take the bad change.
 | Duplicate slug after normalisation | all | Two files, one URL. One would silently win. |
 | Slug normalises to nothing usable | all | A URL nobody chose must not become permanent. |
 | `type` not `term`/`modern`/`question` | all | The cloud grouping is the index's only structure. |
-| A `verseId` absent from `data/verses.json` | all | A verse the reader was promised, silently dropped. |
+| A `verseId` with no file in `content/verses/` | all | A verse the reader was promised, silently dropped. |
 | Duplicate `verseIds` within a theme | all | The same verse twice in a curated sequence is an authoring slip. |
 | `published` with no `label.en` | published | Every theme needs an English name. |
 | `published` with no `intro.en` | published | An unframed verse list is not a page. |
@@ -314,7 +327,7 @@ easiest to violate:
 
 > **Keyword search finds where a WORD appears, not where an IDEA is taught.**
 
-Searching `verses.json` for "anger" returns verses that contain the English translator's word
+Searching `content/verses/` for "anger" returns verses that contain the English translator's word
 "anger". It misses 2.62–2.63, where the mechanism of anger is actually explained, if the
 translator chose "wrath". It returns verses where anger appears in a list of things being
 dismissed, teaching nothing about it. And translation choices vary — the word you searched is
@@ -354,5 +367,6 @@ arriving on it from Google with a real problem.
 - [ ] Existing pages are byte-identical: `diff -r` the old and new `dist/` for the 701 verse
       pages, `/`, `/gita/`, `/about/`.
 - [ ] A new language means one entry in `LANGS` plus one subfield in `config.yml` — nothing else.
-- [ ] `card.js`, `data/verses.json` and the daily-verse epoch are untouched.
+- [ ] `card.js`, the numeric verse order in `lib/verses.js` and the daily-verse epoch are
+      untouched.
 - [ ] `docs/content-log.md` reflects any theme added, drafted or published.

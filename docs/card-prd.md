@@ -88,7 +88,7 @@ secondary signal). Target: 50 organic shares/week before any v1.1 work begins
 
 ### 5.1 Language data
 
-- `en` and `hi` come straight from `data/verses.json`.
+- `en` and `hi` come straight from the verse files in `content/verses/`.
 - `hn` (Hinglish) **does not exist in the source data**. `build.js` generates it
   at build time by transliterating `v.hi` (Devanagari → casual Roman) with
   schwa-deletion heuristics. Bad words are fixed via the `HN_WORDS` exception
@@ -128,7 +128,7 @@ and the site it links to feel like one object.
 ### 7.1 Data flow
 
 ```
-data/verses.json ──build.js──▶ +hn field ──▶ /v/{id}.json          (home fetches today's)
+content/verses/*.json ──build.js──▶ +hn field ──▶ /v/{id}.json    (home fetches today's)
                                         └─▶ window.__VERSE__       (inlined on verse pages)
 verse ──▶ card.js state ──▶ draw() on canvas ──▶ toBlob() ──▶ share/download
 ```
@@ -173,7 +173,7 @@ verse ──▶ card.js state ──▶ draw() on canvas ──▶ toBlob() ─�
 - Shlokas with 2–6 lines (speaker lines like `सञ्जय उवाच` included) — auto-shrink.
 - Very long meanings (Ramsukhdas Hindi runs long) — size buckets + 7-line clamp.
 - Verse pages work offline-after-load: data is inlined, no fetch needed.
-- `verses.json` count changing (701 today) — `todaysId` takes the count as input;
+- the verse count changing (701 today, pinned in `lib/verses.js`) — `todaysId` takes the count as input;
   the mod just wraps. (Appending verses is safe; reordering is not.)
 
 ## 9. Out of scope / future (gated on 50 shares/week)

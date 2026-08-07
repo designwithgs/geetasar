@@ -7,14 +7,14 @@ One Bhagavad Gita shloka a day. Sanskrit + Hindi + English, with a clean 1080×1
 ```
 site/
   build.js          # zero-dependency Node build script
-  data/verses.json  # 701 verses: sanskrit, transliteration, hindi, english
-  data/chapters.json
+  content/verses/   # 701 verses, one JSON each — sanskrit, transliteration,
+                    #   hindi, english. The source of truth, editable at /admin/
   content/themes/   # curated theme pages, authored in the CMS at /admin/
-  content/verses/   # generated verse index the CMS verse picker reads
-  lib/              # shared Node modules (slug rule, theme schema)
+  data/chapters.json
+  lib/              # shared Node modules (verse set, hinglish, slug, themes)
   src/style.css     # site styles
   src/card.js       # canvas card renderer + Web Share
-  tools/            # standalone scripts (theme validator, index builders)
+  tools/            # standalone scripts (verse validator, theme validator)
   static/           # favicon, og.png, /admin/ CMS
   dist/             # generated output (~706 pages + 701 verse JSONs)
 ```
@@ -27,9 +27,15 @@ node build.js
 
 Output goes to `dist/`. No npm install needed. Node 18+.
 
-The build validates `content/themes/` first and **exits without writing anything** if a theme
-is broken — a duplicate slug, a verse id that doesn't exist, a published theme with no label.
-Run that check on its own with `node tools/validate-themes.js`.
+The build validates `content/verses/` and then `content/themes/` before anything else, and
+**exits without writing anything** if either is broken — an emptied Sanskrit or English field, a
+verse file whose chapter no longer matches its filename, a duplicate theme slug, a verse id that
+doesn't exist, a published theme with no label. Run the checks on their own with
+`node tools/validate-verses.js` and `node tools/validate-themes.js`.
+
+The verse validator also prints a correction worklist: the public-domain source dataset has real
+errors in it (1.7 and 16.6 both read "No changes needed."; 11.19 has Devanagari in the
+transliteration field), and those are fixed by editing the verse in the CMS.
 
 ## Themes and the CMS
 
