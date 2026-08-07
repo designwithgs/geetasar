@@ -101,7 +101,7 @@ function shell({ title, desc, url, body, inlineData }) {
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Tiro+Devanagari+Sanskrit&family=Mukta:wght@300;400;500;600&family=Source+Serif+4:opsz,wght@8..60,400;8..60,600&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="/style.css?v=2">
+<link rel="stylesheet" href="/style.css?v=3">
 <!-- Analytics: uncomment ONE of the two blocks below after setup.
 <script defer src="https://cloud.umami.is/script.js" data-website-id="YOUR-UMAMI-ID"></script>
 -->
@@ -115,6 +115,7 @@ ${inlineData ? `<script>window.__VERSE__=${inlineData};</script>` : ''}
   <a class="brand" href="/"><span class="mark" aria-hidden="true"></span>GeetaSar</a>
   <nav>
     <a href="/gita/">All Shlokas</a>
+    <a href="/themes/">Themes</a>
     <a href="/about/">About</a>
   </nav>
 </header>
@@ -299,8 +300,222 @@ fs.writeFileSync(path.join(DIST, 'about', 'index.html'), shell({ title: 'About �
 /* 404 */
 fs.writeFileSync(path.join(DIST, '404.html'), shell({ title: 'Not found — GeetaSar', desc: 'Page not found.', url: SITE + '/404', body: `<main class="wrap prose"><h1 class="page-h">Page not found</h1><p><a href="/">See today’s shloka →</a></p></main>` }));
 
+/* ---------- themes ----------
+   content/themes/*.json (authored in the CMS at /admin/) → one page per
+   published theme at /theme/{slug}/ plus a plain grouped index at /themes/.
+   A theme's verseIds are joined against data/verses.json and rendered in the
+   curator's order — never re-sorted. Purely additive: no card canvas here,
+   each verse links out to its existing /verse/{c}-{v}/ page to be shared. */
+
+const THEMES_DIR = path.join(__dirname, 'content/themes');
+const THEME_GROUPS = [
+  { key: 'term', label: 'Terms', eyebrow: 'Term' },
+  { key: 'modern', label: 'Modern life', eyebrow: 'Modern' },
+  { key: 'question', label: 'Questions', eyebrow: 'Question' },
+  { key: 'other', label: 'Other', eyebrow: 'Theme' },
+];
+
+const slugify = (s) => String(s || '').toLowerCase().trim().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
+const cap = (s) => (s ? s.charAt(0).toUpperCase() + s.slice(1) : s);
+
+let themeWarnings = 0;
+function themeWarn(msg) {
+  themeWarnings++;
+  console.warn(`\n  !!  ${msg}\n`);
+}
+
+/* ---------- minimal markdown, for theme explanations only ----------
+   Headings, paragraphs, lists, bold, italic, inline code and links — the
+   subset the CMS markdown widget actually emits for an essay. Deliberately
+   not a markdown library: this repo stays zero-dependency. Raw HTML blocks
+   pass through only when they open with an allow-listed embed tag; anything
+   else is escaped and shows up as literal text. */
+const MD_RAW_TAGS = /^<(iframe|img|blockquote|figure|figcaption|video|audio|div|p|br|hr|table)[\s/>]/i;
+const MD_SAFE_HREF = /^(https?:\/\/|mailto:|\/|#)/i;
+
+function mdInline(text) {
+  return esc(text)
+    .replace(/`([^`]+)`/g, (m, code) => `<code>${code}</code>`)
+    /* the href pattern tolerates one level of nested parens, so Wikipedia-style
+       links (…_(disambiguation)) survive and a javascript:alert(1) href is
+       captured whole rather than leaving a stray ")" behind */
+    .replace(/\[([^\]]+)\]\(([^()\s]*(?:\([^()\s]*\)[^()\s]*)*)\)/g, (m, label, href) => {
+      if (!MD_SAFE_HREF.test(href)) return label; // javascript: and friends render as plain text
+      return `<a href="${href}"${/^https?:/i.test(href) ? ' target="_blank" rel="noopener"' : ''}>${label}</a>`;
+    })
+    .replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>')
+    .replace(/__([^_]+)__/g, '<strong>$1</strong>')
+    .replace(/(^|[^*])\*([^*\n]+)\*/g, '$1<em>$2</em>')
+    .replace(/(^|[^\w_])_([^_\n]+)_/g, '$1<em>$2</em>');
+}
+
+function mdToHtml(md) {
+  const out = [];
+  for (const block of String(md || '').replace(/\r\n?/g, '\n').trim().split(/\n{2,}/)) {
+    const b = block.trim();
+    if (!b) continue;
+    /* whole-block passthrough so a multi-line <iframe>…</iframe> stays intact */
+    if (b.startsWith('<') && MD_RAW_TAGS.test(b)) { out.push(b); continue; }
+    let para = [], list = [];
+    const flushP = () => { if (para.length) { out.push(`<p>${mdInline(para.join('\n')).replace(/\n/g, '<br>')}</p>`); para = []; } };
+    const flushL = () => { if (list.length) { out.push(`<ul>${list.map((l) => `<li>${mdInline(l)}</li>`).join('')}</ul>`); list = []; } };
+    for (const line of b.split('\n').map((l) => l.trim()).filter(Boolean)) {
+      const h = line.match(/^(#{1,6})\s+(.+)$/);
+      if (h) { flushP(); flushL(); const n = Math.min(h[1].length + 1, 6); out.push(`<h${n}>${mdInline(h[2])}</h${n}>`); continue; } // page h1 is the theme label
+      if (/^[-*]\s+/.test(line)) { flushP(); list.push(line.replace(/^[-*]\s+/, '')); continue; }
+      flushL();
+      para.push(line);
+    }
+    flushP(); flushL();
+  }
+  return out.join('\n');
+}
+
+/* plain-text fields (blurb, intro): escape, keep paragraph breaks, no markdown */
+const textParas = (s, cls) => String(s || '').trim().split(/\n{2,}/).filter(Boolean)
+  .map((p) => `<p${cls ? ` class="${cls}"` : ''}>${esc(p.trim()).replace(/\n/g, '<br>')}</p>`).join('\n');
+
+/* ---------- load + validate ---------- */
+const themes = [];
+const themeSlugs = new Set();
+const themeFiles = fs.existsSync(THEMES_DIR)
+  ? fs.readdirSync(THEMES_DIR).filter((f) => f.endsWith('.json')).sort()
+  : [];
+
+for (const file of themeFiles) {
+  let t;
+  try {
+    t = JSON.parse(fs.readFileSync(path.join(THEMES_DIR, file), 'utf8'));
+  } catch (e) {
+    themeWarn(`THEME ${file}: not valid JSON (${e.message}) — skipped`);
+    continue;
+  }
+  if (t.published !== true) continue;
+
+  const slug = slugify(t.id || path.basename(file, '.json'));
+  if (!slug) { themeWarn(`THEME ${file}: id ${JSON.stringify(t.id)} has no usable slug — skipped`); continue; }
+  if (themeSlugs.has(slug)) { themeWarn(`THEME ${file}: slug "${slug}" is already taken by another theme — skipped`); continue; }
+  themeSlugs.add(slug);
+
+  const list = [];
+  for (const id of t.verseIds || []) {
+    const v = verses.find((x) => `${x.c}-${x.v}` === id); // ids are the /verse/{c}-{v}/ slug
+    if (!v) { themeWarn(`THEME "${t.id}" (${file}): verseId "${id}" matches no verse in data/verses.json — dropped from the page`); continue; }
+    list.push(v);
+  }
+  if (!list.length) themeWarn(`THEME "${t.id}" (${file}): published with no resolvable verses — the page will be empty`);
+
+  let type = t.type;
+  if (!THEME_GROUPS.slice(0, 3).some((g) => g.key === type)) {
+    themeWarn(`THEME "${t.id}" (${file}): type ${JSON.stringify(t.type)} is not term/modern/question — filed under Other`);
+    type = 'other';
+  }
+  themes.push({ ...t, slug, type, list });
+}
+
+/* ---------- one page per theme ---------- */
+function themeVerse(v) {
+  const ch = chapters[v.c] || { en: '', hi: '' };
+  const saHtml = esc(v.sa).replace(/\n/g, '<br>');
+  const trHtml = esc(v.tr).replace(/\n/g, '<br>');
+  return `<article class="theme-verse">
+  <p class="tv-ref">Chapter ${v.c} · Verse ${v.v}${ch.en ? ` — ${esc(ch.en)}` : ''}</p>
+  <p class="sa" lang="sa">${saHtml}</p>
+  <details class="tr-toggle">
+    <summary>Transliteration &amp; Hinglish</summary>
+    <p class="tr">${trHtml}</p>
+    <p class="tr hn">${esc(v.hn)}</p>
+  </details>
+  <div class="meaning">
+    <h2 class="mh">Meaning</h2>
+    <p lang="en" class="en">${esc(v.en)}</p>
+    <h2 class="mh">Hindi Meaning</h2>
+    <p lang="hi" class="hi">${esc(v.hi)}</p>
+  </div>
+  <p class="tv-actions"><a class="btn ghost tv-link" href="/verse/${v.c}-${v.v}/">Open &amp; share this shloka →</a></p>
+</article>`;
+}
+
+for (const t of themes) {
+  const group = THEME_GROUPS.find((g) => g.key === t.type);
+  const label = t.label_en || t.id;
+  const banner = t.image
+    ? `<figure class="theme-banner"><img src="${esc(t.image)}" alt="${esc(t.image_alt || '')}" loading="lazy"></figure>`
+    : '';
+  const body = `
+<main class="wrap">
+  <p class="eyebrow">${group.eyebrow}</p>
+  <h1 class="page-h">${esc(label)}${t.label_hi ? `<span class="theme-hi" lang="hi">${esc(t.label_hi)}</span>` : ''}</h1>
+  ${banner}
+  ${t.blurb ? textParas(t.blurb, 'theme-blurb') : ''}
+  <div class="ornament"></div>
+  ${t.intro ? `<section class="theme-intro reveal">${textParas(t.intro)}</section>` : ''}
+  <section class="theme-verses reveal">
+    ${t.list.length ? t.list.map(themeVerse).join('\n    ') : '<p class="theme-empty">Verses for this theme are being curated.</p>'}
+  </section>
+  ${t.explanation ? `<div class="ornament"></div>\n  <section class="theme-essay reveal">${mdToHtml(t.explanation)}</section>` : ''}
+  <nav class="pager">
+    <a href="/themes/">← All themes</a>
+    <a href="/gita/" class="mid">All Chapters</a>
+    <span></span>
+  </nav>
+</main>`;
+  const desc = (t.blurb || t.intro || `${t.list.length} Bhagavad Gita shlokas on ${label}, with Sanskrit, Hindi and English meaning.`)
+    .replace(/\s+/g, ' ').trim().slice(0, 155);
+  const dir = path.join(DIST, 'theme', t.slug);
+  fs.mkdirSync(dir, { recursive: true });
+  fs.writeFileSync(
+    path.join(dir, 'index.html'),
+    shell({
+      title: `${cap(label)} — Bhagavad Gita verses | GeetaSar`,
+      desc,
+      url: `${SITE}/theme/${t.slug}/`,
+      body,
+    })
+  );
+}
+
+/* ---------- /themes/ — plain list, grouped by type (no cloud UI yet) ---------- */
+const themeGroupsHtml = THEME_GROUPS
+  .map((g) => {
+    const items = themes.filter((t) => t.type === g.key).sort((a, b) => String(a.label_en || a.id).localeCompare(String(b.label_en || b.id)));
+    if (!items.length) return '';
+    return `<section class="theme-group">
+  <h2 class="tg-h">${g.label}</h2>
+  <ul class="theme-list">
+    ${items.map((t) => `<li><a href="/theme/${t.slug}/"${t.blurb ? ` title="${esc(String(t.blurb).replace(/\s+/g, ' ').trim())}"` : ''}>
+      <span class="tl-en">${esc(t.label_en || t.id)}</span>
+      ${t.label_hi ? `<span class="tl-hi" lang="hi">${esc(t.label_hi)}</span>` : ''}
+      <span class="tl-n">${t.list.length} shloka${t.list.length === 1 ? '' : 's'}</span>
+    </a></li>`).join('\n    ')}
+  </ul>
+</section>`;
+  })
+  .filter(Boolean)
+  .join('\n');
+
+const themesBody = `
+<main class="wrap">
+  <p class="eyebrow">Themes</p>
+  <h1 class="page-h">The Gita, by theme</h1>
+  <div class="ornament"></div>
+  <section class="reveal">
+    ${themeGroupsHtml || '<p class="theme-empty">Themed collections are being curated. In the meantime, browse <a href="/gita/">all 18 chapters</a>.</p>'}
+  </section>
+</main>`;
+fs.mkdirSync(path.join(DIST, 'themes'), { recursive: true });
+fs.writeFileSync(
+  path.join(DIST, 'themes', 'index.html'),
+  shell({
+    title: 'Themes — Bhagavad Gita verses by theme | GeetaSar',
+    desc: 'Curated collections of Bhagavad Gita shlokas grouped by theme — with Sanskrit, Hindi and English meaning.',
+    url: SITE + '/themes/',
+    body: themesBody,
+  })
+);
+
 /* sitemap + robots */
-const urls = [`${SITE}/`, `${SITE}/gita/`, `${SITE}/about/`, ...verses.map((v) => `${SITE}/verse/${v.c}-${v.v}/`)];
+const urls = [`${SITE}/`, `${SITE}/gita/`, `${SITE}/about/`, `${SITE}/themes/`, ...themes.map((t) => `${SITE}/theme/${t.slug}/`), ...verses.map((v) => `${SITE}/verse/${v.c}-${v.v}/`)];
 fs.writeFileSync(path.join(DIST, 'sitemap.xml'), `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${urls.map((u) => `<url><loc>${u}</loc></url>`).join('\n')}\n</urlset>`);
 fs.writeFileSync(path.join(DIST, 'robots.txt'), `User-agent: *\nAllow: /\nDisallow: /admin/\nSitemap: ${SITE}/sitemap.xml`);
 
@@ -308,4 +523,5 @@ fs.writeFileSync(path.join(DIST, 'robots.txt'), `User-agent: *\nAllow: /\nDisall
 for (const f of ['style.css', 'card.js', 'reveal.js']) fs.copyFileSync(path.join(__dirname, 'src', f), path.join(DIST, f));
 fs.cpSync(path.join(__dirname, 'static'), DIST, { recursive: true });
 
-console.log(`Built ${urls.length} pages → dist/`);
+console.log(`Built ${urls.length} pages → dist/ (${themes.length} theme page${themes.length === 1 ? '' : 's'})`);
+if (themeWarnings) console.warn(`\n  !!  ${themeWarnings} theme warning${themeWarnings === 1 ? '' : 's'} above — themes built anyway, but check content/themes/.\n`);
