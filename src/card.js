@@ -46,43 +46,24 @@
     ctx.fillText(text, (W - ctx.measureText(text).width) / 2, y);
   }
 
-  /* Some verses store the whole shloka as one line. Break those on
-     danda (।/॥) boundaries so multi-line layout matches the rest of
-     the data: a fused speaker prefix (…उवाच) gets its own line and
-     the trailing verse number (e.g. ।।१५.१।।) stays with its pada. */
-  function shlokaLines(sa) {
-    var lines = sa.split('\n').filter(Boolean);
-    if (lines.length > 1) return lines;
-    var out = [];
-    (lines[0] || '').replace(/^(.{0,20}?(?:उवाच|[ुू]वाच))(?=[^\s।॥])/, '$1\n').split('\n').forEach(function (part) {
-      var buf = '';
-      for (var i = 0; i < part.length; i++) {
-        buf += part.charAt(i);
-        if ((part.charAt(i) === '।' || part.charAt(i) === '॥') &&
-            part.charAt(i + 1) !== '।' && part.charAt(i + 1) !== '॥') {
-          out.push(buf.trim());
-          buf = '';
-        }
-      }
-      if (buf.trim()) out.push(buf.trim());
-    });
-    var last = out[out.length - 1];
-    if (out.length > 1 && last.replace(/[।॥\s]/g, '').length <= 8) {
-      out[out.length - 2] += last;
-      out.pop();
-    }
-    return out;
+  function escapeHtml(t) {
+    return String(t).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  }
+
+  /* build.js splits single-line shlokas on danda boundaries and ships the
+     result as v.sl; the split is the same for the card and the page. */
+  function shlokaLines(v) {
+    return (v.sl && v.sl.length) ? v.sl : (v.sa || '').split('\n').filter(Boolean);
   }
 
   function fitLines(ctx, rawLines, font, maxW, startSize, minSize) {
     var size = startSize;
-    while (size > minSize) {
+    while (true) {
       ctx.font = size + 'px ' + font;
       var tooWide = rawLines.some(function (l) { return ctx.measureText(l).width > maxW; });
-      if (!tooWide) break;
-      size -= 2;
+      if (!tooWide || size <= minSize) break;
+      size = Math.max(minSize, size - 2);
     }
-    ctx.font = size + 'px ' + font;
     return size;
   }
 
@@ -127,15 +108,16 @@
     fillCentered('॥ श्रीमद्भगवद्गीता ॥', 130);
 
     /* shloka */
-    var saLines = shlokaLines(v.sa);
+    var saLines = shlokaLines(v);
     ctx.fillStyle = '#efe9da';
     var saSize = fitLines(ctx, saLines, DEVA, W - 200, saLines.length > 3 ? 46 : 54, 34);
-    /* last resort: a pada that still overflows at the floor size wraps on spaces */
+    /* last resort: a pada that still overflows at the floor size wraps on
+       spaces, and a pada with nothing to break on shrinks below the floor */
     if (saLines.some(function (l) { return ctx.measureText(l).width > W - 200; })) {
       var rewrapped = [];
       saLines.forEach(function (l) { rewrapped = rewrapped.concat(wrap(ctx, l, W - 200)); });
       saLines = rewrapped;
-      saSize = fitLines(ctx, saLines, DEVA, W - 200, saSize, 34);
+      saSize = fitLines(ctx, saLines, DEVA, W - 200, saSize, 26);
     }
     var saLH = saSize * 1.75;
     var meaning = (state.lang === 'hi' ? v.hi : state.lang === 'hn' ? v.hn : v.en) || '';
@@ -151,8 +133,24 @@
     if (mLines.length > 7) { mLines = mLines.slice(0, 7); mLines[6] += ' …'; }
     var mLH = mSize * 1.6;
 
-    var blockH = saLines.length * saLH + 70 /*rule gap*/ + mLines.length * mLH;
-    var y = Math.max(230, (H - 140 - blockH) / 2 + 60);
+    /* the shloka can wrap into more lines than its start size assumed, so
+       shrink the taller block until the composition fits between the eyebrow
+       and the footer reference instead of spilling past the border */
+    var TOP = 200, AVAIL = H - 150 - TOP;
+    function blockH() { return saLines.length * saLH + 70 /*rule gap*/ + mLines.length * mLH; }
+    while (blockH() > AVAIL && (saSize > 26 || mSize > 24)) {
+      if (saSize > 26 && saLines.length * saLH >= mLines.length * mLH) {
+        saSize -= 2;
+        saLH = saSize * 1.75;
+      } else if (mSize > 24) {
+        mSize -= 2;
+        ctx.font = meaningFont(mSize);
+        mLines = wrap(ctx, meaning, W - 220);
+        if (mLines.length > 7) { mLines = mLines.slice(0, 7); mLines[6] += ' …'; }
+        mLH = mSize * 1.6;
+      } else break;
+    }
+    var y = Math.max(TOP, (H - 140 - blockH()) / 2 + 60);
 
     ctx.font = saSize + 'px ' + DEVA;
     ctx.fillStyle = '#efe9da';
@@ -270,8 +268,8 @@
     var root = document.getElementById('verseText');
     if (!root) return;
     root.hidden = false;
-    root.querySelector('.sa').innerHTML = v.sa.replace(/\n/g, '<br>');
-    root.querySelector('.tr').innerHTML = v.tr.replace(/\n/g, '<br>');
+    root.querySelector('.sa').innerHTML = shlokaLines(v).map(escapeHtml).join('<br>');
+    root.querySelector('.tr').innerHTML = v.tr.split('\n').map(escapeHtml).join('<br>');
     root.querySelector('.hi').textContent = v.hi;
     root.querySelector('.en').textContent = v.en;
     var link = document.getElementById('permalink');

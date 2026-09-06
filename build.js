@@ -9,6 +9,7 @@ const path = require('path');
    src/ is browser code that gets COPIED into dist/; lib/ is Node code that gets
    REQUIRED here and by tools/. Never require anything out of src/. */
 const { hinglish } = require('./lib/hinglish');
+const { shlokaLines } = require('./lib/shloka');
 const { pick } = require('./lib/themes');
 const { validate: validateVerses, report: reportVerses } = require('./tools/validate-verses');
 const { validate, report } = require('./tools/validate-themes');
@@ -61,9 +62,11 @@ const MOTIF_BY_CHAPTER = {
    rendered from this in-memory array. */
 const versesJson = JSON.stringify(verses);
 
-/* hn (Hinglish) is GENERATED from hi, never stored — see lib/hinglish.js. */
+/* hn (Hinglish) and sl (danda-split shloka lines) are GENERATED here, never
+   stored — see lib/hinglish.js and lib/shloka.js. */
 for (const v of verses) {
   v.hn = hinglish(v.hi);
+  v.sl = shlokaLines(v.sa);
   v.motif = MOTIF_BY_CHAPTER[v.c];
 }
 
@@ -117,7 +120,7 @@ ${body}
 
 /* ---------- verse block (shared by index + verse pages) ---------- */
 function verseBlock(v, { isToday }) {
-  const saHtml = esc(v.sa).replace(/\n/g, '<br>');
+  const saHtml = v.sl.map(esc).join('<br>');
   const trHtml = esc(v.tr).replace(/\n/g, '<br>');
   return `
 <main class="wrap">
@@ -162,7 +165,7 @@ function verseBlock(v, { isToday }) {
 
   <div class="ornament"></div>
 </main>
-<script src="/card.js?v=8" defer></script>`;
+<script src="/card.js?v=9" defer></script>`;
 }
 
 function prevNext(v) {
@@ -219,7 +222,7 @@ const indexBody = `
   </section>
 </main>
 <script>window.__TODAY__={count:${verses.length}};</script>
-<script src="/card.js?v=8" defer></script>`;
+<script src="/card.js?v=9" defer></script>`;
 
 fs.writeFileSync(
   path.join(DIST, 'index.html'),
@@ -375,7 +378,7 @@ const themes = themeReport.themes
 /* ---------- one page per theme ---------- */
 function themeVerse(v) {
   const ch = chapters[v.c] || { en: '', hi: '' };
-  const saHtml = esc(v.sa).replace(/\n/g, '<br>');
+  const saHtml = v.sl.map(esc).join('<br>');
   const trHtml = esc(v.tr).replace(/\n/g, '<br>');
   return `<article class="theme-verse">
   <p class="tv-ref">Chapter ${v.c} · Verse ${v.v}${ch.en ? ` — ${esc(ch.en)}` : ''}</p>
