@@ -14,6 +14,12 @@
   var MOTIF_X = W - MOTIF_SIZE * 0.55; /* half-bleeds off the bottom-right */
   var MOTIF_Y = H - MOTIF_SIZE * 0.55;
 
+  /* card text box: the shloka/meaning composition sits between TOP and BOTTOM
+     and no line runs wider than SA_MAXW. Below SA_MIN the shloka is re-wrapped
+     rather than shrunk further; SA_HARD_MIN / M_MIN are the absolute floors. */
+  var SA_MAXW = W - 200, SA_MIN = 34, SA_HARD_MIN = 26, M_MIN = 24;
+  var TOP = 200, BOTTOM = H - 150, AVAIL = BOTTOM - TOP;
+
   var DEV = { 0: '०', 1: '१', 2: '२', 3: '३', 4: '४', 5: '५', 6: '६', 7: '७', 8: '८', 9: '९' };
   function dev(n) { return String(n).replace(/\d/g, function (d) { return DEV[d]; }); }
 
@@ -46,25 +52,32 @@
     ctx.fillText(text, (W - ctx.measureText(text).width) / 2, y);
   }
 
-  function escapeHtml(t) {
-    return String(t).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  function setLines(el, lines) {
+    el.textContent = '';
+    lines.forEach(function (l, i) {
+      if (i) el.appendChild(document.createElement('br'));
+      el.appendChild(document.createTextNode(l));
+    });
   }
 
-  /* build.js splits single-line shlokas on danda boundaries and ships the
-     result as v.sl; the split is the same for the card and the page. */
+  /* build.js splits every shloka into padas and ships them as v.sl (lib/shloka.js).
+     The fallback only covers a /v/{id}.json cached from before that field existed. */
   function shlokaLines(v) {
     return (v.sl && v.sl.length) ? v.sl : (v.sa || '').split('\n').filter(Boolean);
   }
 
+  /* Largest even size at or above minSize where no line exceeds maxW, else
+     minSize. Leaves ctx.font at the size it returns, and reports whether the
+     lines still overflow there so the caller need not measure them again. */
   function fitLines(ctx, rawLines, font, maxW, startSize, minSize) {
-    var size = startSize;
-    while (true) {
+    for (var size = startSize; size > minSize; size -= 2) {
       ctx.font = size + 'px ' + font;
-      var tooWide = rawLines.some(function (l) { return ctx.measureText(l).width > maxW; });
-      if (!tooWide || size <= minSize) break;
-      size = Math.max(minSize, size - 2);
+      if (!rawLines.some(function (l) { return ctx.measureText(l).width > maxW; })) {
+        return { size: size, tooWide: false };
+      }
     }
-    return size;
+    ctx.font = minSize + 'px ' + font;
+    return { size: minSize, tooWide: rawLines.some(function (l) { return ctx.measureText(l).width > maxW; }) };
   }
 
   /* ---------- draw ---------- */
@@ -110,14 +123,15 @@
     /* shloka */
     var saLines = shlokaLines(v);
     ctx.fillStyle = '#efe9da';
-    var saSize = fitLines(ctx, saLines, DEVA, W - 200, saLines.length > 3 ? 46 : 54, 34);
+    var sa = fitLines(ctx, saLines, DEVA, SA_MAXW, saLines.length > 3 ? 46 : 54, SA_MIN);
+    var saSize = sa.size;
     /* last resort: a pada that still overflows at the floor size wraps on
        spaces, and a pada with nothing to break on shrinks below the floor */
-    if (saLines.some(function (l) { return ctx.measureText(l).width > W - 200; })) {
+    if (sa.tooWide) {
       var rewrapped = [];
-      saLines.forEach(function (l) { rewrapped = rewrapped.concat(wrap(ctx, l, W - 200)); });
+      saLines.forEach(function (l) { rewrapped = rewrapped.concat(wrap(ctx, l, SA_MAXW)); });
       saLines = rewrapped;
-      saSize = fitLines(ctx, saLines, DEVA, W - 200, saSize, 26);
+      saSize = fitLines(ctx, saLines, DEVA, SA_MAXW, saSize, SA_HARD_MIN).size;
     }
     var saLH = saSize * 1.75;
     var meaning = (state.lang === 'hi' ? v.hi : state.lang === 'hn' ? v.hn : v.en) || '';
@@ -127,28 +141,31 @@
     }
 
     /* meaning sizing first so we can centre the whole composition */
-    var mSize = meaning.length > 260 ? 30 : meaning.length > 170 ? 34 : 38;
-    ctx.font = meaningFont(mSize);
-    var mLines = wrap(ctx, meaning, W - 220);
-    if (mLines.length > 7) { mLines = mLines.slice(0, 7); mLines[6] += ' …'; }
-    var mLH = mSize * 1.6;
+    var mSize, mLines, mLH;
+    function layoutMeaning(size) {
+      mSize = size;
+      ctx.font = meaningFont(size);
+      mLines = wrap(ctx, meaning, W - 220);
+      if (mLines.length > 7) { mLines = mLines.slice(0, 7); mLines[6] += ' …'; }
+      mLH = size * 1.6;
+    }
+    layoutMeaning(meaning.length > 260 ? 30 : meaning.length > 170 ? 34 : 38);
 
-    /* the shloka can wrap into more lines than its start size assumed, so
-       shrink the taller block until the composition fits between the eyebrow
-       and the footer reference instead of spilling past the border */
-    var TOP = 200, AVAIL = H - 150 - TOP;
+    /* The composition lives between the eyebrow and the footer reference. A
+       shloka can wrap into more lines than its start size assumed, so shrink
+       whichever block is taller until it fits rather than spill past the
+       border. AVAIL is the exact budget: a block that tall clamps to TOP
+       below, so its bottom lands on BOTTOM. */
     function blockH() { return saLines.length * saLH + 70 /*rule gap*/ + mLines.length * mLH; }
-    while (blockH() > AVAIL && (saSize > 26 || mSize > 24)) {
-      if (saSize > 26 && saLines.length * saLH >= mLines.length * mLH) {
+    while (blockH() > AVAIL) {
+      var canSa = saSize > SA_HARD_MIN, canM = mSize > M_MIN;
+      if (!canSa && !canM) break;
+      if (canSa && (!canM || saLines.length * saLH >= mLines.length * mLH)) {
         saSize -= 2;
         saLH = saSize * 1.75;
-      } else if (mSize > 24) {
-        mSize -= 2;
-        ctx.font = meaningFont(mSize);
-        mLines = wrap(ctx, meaning, W - 220);
-        if (mLines.length > 7) { mLines = mLines.slice(0, 7); mLines[6] += ' …'; }
-        mLH = mSize * 1.6;
-      } else break;
+      } else {
+        layoutMeaning(mSize - 2);
+      }
     }
     var y = Math.max(TOP, (H - 140 - blockH()) / 2 + 60);
 
@@ -268,8 +285,8 @@
     var root = document.getElementById('verseText');
     if (!root) return;
     root.hidden = false;
-    root.querySelector('.sa').innerHTML = shlokaLines(v).map(escapeHtml).join('<br>');
-    root.querySelector('.tr').innerHTML = v.tr.split('\n').map(escapeHtml).join('<br>');
+    setLines(root.querySelector('.sa'), shlokaLines(v));
+    setLines(root.querySelector('.tr'), v.tr.split('\n'));
     root.querySelector('.hi').textContent = v.hi;
     root.querySelector('.en').textContent = v.en;
     var link = document.getElementById('permalink');
